@@ -127,4 +127,8 @@ jar.finalizedBy('reobfJar')
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs << "-AreobfSrgFile=${project.file('build/createMcpToSrg/output.tsrg')}"
+    options.compilerArgs << "-AoutSrgFile=${project.file("build/${it.name}Srg/output.tsrg")}"
+    options.compilerArgs << "-AoutRefMapFile=${project.file("build/${it.name}Refmap/${project.findProperty('mod_id') ?: 'create_dragons_plus'}.refmap.json")}"
 }
+compileJava.dependsOn(createMcpToSrg)

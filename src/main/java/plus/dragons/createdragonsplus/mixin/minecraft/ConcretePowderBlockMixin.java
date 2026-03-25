@@ -53,7 +53,7 @@ public abstract class ConcretePowderBlockMixin extends FallingBlock {
     @Final
     private Block concrete;
 
-    @Inject(remap = false, method = "updateShape", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "updateShape", at = @At("HEAD"), cancellable = true)
     private void updateShape$handleDyeLiquidInteraction(BlockState state, Direction facing, BlockState facingState, LevelAccessor level, BlockPos pos, BlockPos facingPos, CallbackInfoReturnable<BlockState> cir) {
         var result = createDragonsPlus$getProperSolidified(level, pos, concrete);
         if (result != null) {
@@ -61,7 +61,7 @@ public abstract class ConcretePowderBlockMixin extends FallingBlock {
         }
     }
 
-    @Inject(remap = false, method = "onLand", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "onLand", at = @At("HEAD"), cancellable = true)
     private void onLand$handleDyeLiquidInteraction(Level level, BlockPos pos, BlockState state, BlockState replaceableState, FallingBlockEntity fallingBlock, CallbackInfo ci) {
         var result = createDragonsPlus$getProperSolidified(level, pos, concrete);
         if (result != null) {
@@ -70,7 +70,7 @@ public abstract class ConcretePowderBlockMixin extends FallingBlock {
         }
     }
 
-    @Inject(remap = false, method = "getStateForPlacement", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getStateForPlacement", at = @At("HEAD"), cancellable = true)
     private void getStateForPlacement$handleDyeLiquidInteraction(BlockPlaceContext context, CallbackInfoReturnable<BlockState> cir) {
         var result = createDragonsPlus$getProperSolidified(context.getLevel(), context.getClickedPos(), concrete);
         if (result != null) {
