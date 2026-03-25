@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,21 +20,26 @@
 package plus.dragons.createdragonsplus.common.kinetics.fan.freezing;
 
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
-import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
+import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
 import com.simibubi.create.foundation.recipe.RecipeApplier;
+import com.simibubi.create.foundation.utility.Color;
 import java.util.List;
 import java.util.Optional;
-import net.createmod.catnip.theme.Color;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.wrapper.RecipeWrapper;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.processing.freeze.BlockFreezer;
 import plus.dragons.createdragonsplus.common.processing.freeze.FreezeCondition;
@@ -42,16 +48,18 @@ import plus.dragons.createdragonsplus.config.CDPConfig;
 import plus.dragons.createdragonsplus.integration.ModIntegration;
 
 public class FreezingFanProcessingType implements FanProcessingType {
-    private final DeferredHolder<FanProcessingType, FanProcessingType> createGarnishedType;
-    private final DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> createGarnishedRecipe;
-    private final DeferredHolder<FanProcessingType, FanProcessingType> createDNDType;
-    private final DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> createDNDRecipe;
+    private final ResourceLocation createGarnishedRecipeTypeId;
+    private final ResourceLocation createDNDRecipeTypeId;
+    private final TagKey<Block> createGarnishedBlockCatalysts;
+    private final TagKey<Block> createDNDBlockCatalysts;
 
     public FreezingFanProcessingType() {
-        this.createGarnishedType = ModIntegration.CREATE_GARNISHED.fanType("freezing");
-        this.createGarnishedRecipe = ModIntegration.CREATE_GARNISHED.recipeType("freezing");
-        this.createDNDType = ModIntegration.CREATE_DND.fanType("freezing");
-        this.createDNDRecipe = ModIntegration.CREATE_DND.recipeType("freezing");
+        this.createGarnishedRecipeTypeId = ModIntegration.CREATE_GARNISHED.asResource("freezing");
+        this.createDNDRecipeTypeId = ModIntegration.CREATE_DND.asResource("freezing");
+        this.createGarnishedBlockCatalysts = TagKey.create(Registries.BLOCK,
+                ModIntegration.CREATE_GARNISHED.asResource("fan_processing_catalysts/freezing"));
+        this.createDNDBlockCatalysts = TagKey.create(Registries.BLOCK,
+                ModIntegration.CREATE_DND.asResource("fan_processing_catalysts/freezing"));
     }
 
     @Override
@@ -62,8 +70,11 @@ public class FreezingFanProcessingType implements FanProcessingType {
         float freeze = BlockFreezer.findFreeze(level, pos, state);
         if (freeze >= 0)
             return true;
-        return (createGarnishedType.isBound() && createGarnishedType.get().isValidAt(level, pos)) ||
-                (createDNDType.isBound() && createDNDType.get().isValidAt(level, pos));
+        if (ModIntegration.CREATE_GARNISHED.enabled() && state.is(createGarnishedBlockCatalysts))
+            return true;
+        if (ModIntegration.CREATE_DND.enabled() && state.is(createDNDBlockCatalysts))
+            return true;
+        return false;
     }
 
     @Override
@@ -75,22 +86,25 @@ public class FreezingFanProcessingType implements FanProcessingType {
     public boolean canProcess(ItemStack stack, Level level) {
         if (!CDPConfig.recipes().enableBulkFreezing.get())
             return false;
+        RecipeWrapper input = createSingleItemWrapper(stack);
         var recipe = level.getRecipeManager()
-                .getRecipeFor(CDPRecipes.FREEZING.getType(), new SingleRecipeInput(stack), level);
+                .getRecipeFor(CDPRecipes.FREEZING.getType(), input, level);
         if (recipe.isPresent())
             return true;
-        return canProcessByCompatRecipe(createGarnishedRecipe, stack, level) || canProcessByCompatRecipe(createDNDRecipe, stack, level);
+        return canProcessByCompatRecipe(createGarnishedRecipeTypeId, ModIntegration.CREATE_GARNISHED, stack, level)
+                || canProcessByCompatRecipe(createDNDRecipeTypeId, ModIntegration.CREATE_DND, stack, level);
     }
 
     @Override
     public @Nullable List<ItemStack> process(ItemStack stack, Level level) {
+        RecipeWrapper input = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(CDPRecipes.FREEZING.getType(), new SingleRecipeInput(stack), level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true))
+                .getRecipeFor(CDPRecipes.FREEZING.getType(), input, level)
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
                 .or(() -> {
-                    var result = processByCompatRecipe(createGarnishedRecipe, stack, level);
+                    var result = processByCompatRecipe(createGarnishedRecipeTypeId, ModIntegration.CREATE_GARNISHED, stack, level);
                     if (result.isEmpty())
-                        result = processByCompatRecipe(createDNDRecipe, stack, level);
+                        result = processByCompatRecipe(createDNDRecipeTypeId, ModIntegration.CREATE_DND, stack, level);
                     return result;
                 })
                 .orElse(null);
@@ -126,20 +140,35 @@ public class FreezingFanProcessingType implements FanProcessingType {
         entity.extinguishFire();
     }
 
-    private boolean canProcessByCompatRecipe(DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType,
-            ItemStack stack, Level level) {
-        if (!recipeType.isBound())
+    @SuppressWarnings("unchecked")
+    private boolean canProcessByCompatRecipe(ResourceLocation recipeTypeId, ModIntegration mod, ItemStack stack, Level level) {
+        if (!mod.enabled())
             return false;
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(recipeTypeId);
+        if (recipeType == null)
+            return false;
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(recipeType.get(), new SingleRecipeInput(stack), level)
+                .getRecipeFor(recipeType, wrapper, level)
                 .isPresent();
     }
 
-    private Optional<List<ItemStack>> processByCompatRecipe(DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType, ItemStack stack, Level level) {
-        if (!recipeType.isBound())
+    @SuppressWarnings("unchecked")
+    private Optional<List<ItemStack>> processByCompatRecipe(ResourceLocation recipeTypeId, ModIntegration mod, ItemStack stack, Level level) {
+        if (!mod.enabled())
             return Optional.empty();
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(recipeTypeId);
+        if (recipeType == null)
+            return Optional.empty();
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(recipeType.get(), new SingleRecipeInput(stack), level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true));
+                .getRecipeFor(recipeType, wrapper, level)
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe));
+    }
+
+    private static RecipeWrapper createSingleItemWrapper(ItemStack stack) {
+        ItemStackHandler handler = new ItemStackHandler(1);
+        handler.setStackInSlot(0, stack);
+        return new RecipeWrapper(handler);
     }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,7 +24,7 @@ import com.simibubi.create.content.fluids.transfer.FluidManipulationBehaviour;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.material.Fluid;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

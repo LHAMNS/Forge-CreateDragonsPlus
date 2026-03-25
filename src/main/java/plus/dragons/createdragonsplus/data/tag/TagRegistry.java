@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,7 +45,7 @@ public class TagRegistry<T, P extends RegistrateTagsProvider<T>> {
     }
 
     public final TagKey<T> tag(String path) {
-        return TagKey.create(this.registry, ResourceLocation.fromNamespaceAndPath(this.namespace, path));
+        return TagKey.create(this.registry, new ResourceLocation(this.namespace, path));
     }
 
     public final TagKey<T> tag(String path, String localization) {
@@ -97,7 +98,7 @@ public class TagRegistry<T, P extends RegistrateTagsProvider<T>> {
             this.values.forEach(tag::add);
             this.optionalValues.forEach(tag::addOptional);
             this.tagValues.forEach(tag::addTag);
-            this.optionalValues.forEach(tag::addOptional);
+            this.optionalTagValues.forEach(tag::addOptionalTag);
         }
     }
 }

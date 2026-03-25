@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,18 +28,18 @@ import static plus.dragons.createdragonsplus.data.recipe.VanillaRecipeBuilders.s
 import static plus.dragons.createdragonsplus.data.recipe.VanillaRecipeBuilders.shapeless;
 
 import com.simibubi.create.content.processing.recipe.ProcessingRecipeBuilder;
-import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import com.tterrag.registrate.providers.RegistrateRecipeProvider;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.common.Tags;
 import plus.dragons.createdragonsplus.common.kinetics.fan.ending.EndingRecipe;
 import plus.dragons.createdragonsplus.common.kinetics.fan.freezing.FreezingRecipe;
 import plus.dragons.createdragonsplus.config.CDPConfig;
@@ -49,14 +50,14 @@ public class CDPRecipeProvider extends RegistrateRecipeProvider {
     }
 
     @Override
-    protected void buildRecipes(RecipeOutput output) {
+    protected void buildRecipes(Consumer<FinishedRecipe> output) {
         buildMachineRecipes(output);
         buildMaterialRecipes(output);
         buildFreezingRecipes(output);
         buildEndingRecipes(output);
     }
 
-    private void buildMachineRecipes(RecipeOutput output) {
+    private void buildMachineRecipes(Consumer<FinishedRecipe> output) {
         shapeless().output(FLUID_HATCH)
                 .require(Tags.Items.INGOTS_COPPER)
                 .require(ITEM_DRAIN)
@@ -65,7 +66,7 @@ public class CDPRecipeProvider extends RegistrateRecipeProvider {
                 .accept(output);
     }
 
-    private void buildMaterialRecipes(RecipeOutput output) {
+    private void buildMaterialRecipes(Consumer<FinishedRecipe> output) {
         shaped().output(BLAZE_UPGRADE_SMITHING_TEMPLATE, 2)
                 .define('t', BLAZE_UPGRADE_SMITHING_TEMPLATE)
                 .define('n', NETHERRACK)
@@ -78,33 +79,32 @@ public class CDPRecipeProvider extends RegistrateRecipeProvider {
                 .accept(output);
     }
 
-    private void buildFreezingRecipes(RecipeOutput output) {
-        Function<ResourceLocation, StandardProcessingRecipe.Builder<FreezingRecipe>> freezing = FreezingRecipe::builder;
+    private void buildFreezingRecipes(Consumer<FinishedRecipe> output) {
+        Function<ResourceLocation, ProcessingRecipeBuilder<FreezingRecipe>> freezing = id -> new ProcessingRecipeBuilder<>(FreezingRecipe::new, id);
         conversion(freezing, ICE, PACKED_ICE).build(output);
         conversion(freezing, PACKED_ICE, BLUE_ICE).build(output);
         conversion(freezing, MAGMA_CREAM, SLIME_BALL).build(output);
-        conversion(freezing, BLAZE_ROD, BREEZE_ROD).build(output);
     }
 
-    private void buildEndingRecipes(RecipeOutput output) {
-        Function<ResourceLocation, StandardProcessingRecipe.Builder<EndingRecipe>> ending = EndingRecipe::builder;
+    private void buildEndingRecipes(Consumer<FinishedRecipe> output) {
+        Function<ResourceLocation, ProcessingRecipeBuilder<EndingRecipe>> ending = id -> new ProcessingRecipeBuilder<>(EndingRecipe::new, id);
         conversion(ending, COBBLESTONE, END_STONE).build(output);
         conversion(ending, STONE_BRICKS, END_STONE_BRICKS).build(output);
         conversion(ending, STONE_BRICK_WALL, END_STONE_BRICK_WALL).build(output);
         conversion(ending, STONE_BRICK_STAIRS, END_STONE_BRICK_STAIRS).build(output);
         conversion(ending, STONE_BRICK_SLAB, END_STONE_BRICK_SLAB).build(output);
         conversion(ending, APPLE, CHORUS_FRUIT).build(output);
-        conversion(ending, Tags.Items.LEATHERS, PHANTOM_MEMBRANE).build(output);
+        conversion(ending, Tags.Items.LEATHER, PHANTOM_MEMBRANE).build(output);
     }
 
-    private <B extends ProcessingRecipeBuilder<?, ?, B>> B conversion(
+    private <B extends ProcessingRecipeBuilder<B>> B conversion(
             Function<ResourceLocation, B> factory,
             ItemLike input, ItemLike output) {
         var recipeId = REGISTRATE.asResource("%s_from_%s".formatted(safeName(output), safeName(input)));
         return factory.apply(recipeId).require(input).output(output);
     }
 
-    private <B extends ProcessingRecipeBuilder<?, ?, B>> B conversion(
+    private <B extends ProcessingRecipeBuilder<B>> B conversion(
             Function<ResourceLocation, B> factory,
             TagKey<Item> input, ItemLike output) {
         var recipeId = REGISTRATE.asResource("%s_from_%s".formatted(safeName(output), safeName(input.location())));

@@ -1,7 +1,7 @@
 @FieldsAreNonnullByDefault
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-package plus.dragons.createdragonsplus.mixin.neoforge;
+package plus.dragons.createdragonsplus.mixin.forge;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import net.minecraft.FieldsAreNonnullByDefault;

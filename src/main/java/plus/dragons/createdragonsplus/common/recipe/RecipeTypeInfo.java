@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,22 +25,29 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.RegistryObject;
 
 @SuppressWarnings("unchecked")
 public class RecipeTypeInfo<R extends Recipe<?>> implements IRecipeTypeInfo {
-    private final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<R>> serializer;
-    private final DeferredHolder<RecipeType<?>, RecipeType<R>> type;
+    private final RegistryObject<RecipeSerializer<R>> serializer;
+    private final RegistryObject<RecipeType<R>> type;
+    private final ResourceLocation id;
 
-    public RecipeTypeInfo(String name, Supplier<? extends RecipeSerializer<R>> serializer, DeferredRegister<RecipeSerializer<?>> serializerRegister, DeferredRegister<RecipeType<?>> typeRegister) {
-        this.serializer = serializerRegister.register(name, serializer);
-        this.type = typeRegister.register(name, RecipeType::simple);
+    public RecipeTypeInfo(String name, String modid, Supplier<? extends RecipeSerializer<R>> serializer, DeferredRegister<RecipeSerializer<?>> serializerRegister, DeferredRegister<RecipeType<?>> typeRegister) {
+        this.id = new ResourceLocation(modid, name);
+        this.serializer = (RegistryObject<RecipeSerializer<R>>) (RegistryObject<?>) serializerRegister.register(name, serializer);
+        this.type = (RegistryObject<RecipeType<R>>) (RegistryObject<?>) typeRegister.register(name, () -> new RecipeType<R>() {
+            @Override
+            public String toString() {
+                return id.toString();
+            }
+        });
     }
 
     @Override
     public ResourceLocation getId() {
-        return serializer.getId();
+        return id;
     }
 
     @Override

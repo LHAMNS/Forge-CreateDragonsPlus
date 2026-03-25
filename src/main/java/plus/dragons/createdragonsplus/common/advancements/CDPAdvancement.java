@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,9 +27,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.advancements.AdvancementType;
-import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.advancements.FrameType;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.ItemUsedOnLocationTrigger;
@@ -44,7 +44,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.registries.RegisterEvent;
 import plus.dragons.createdragonsplus.common.advancements.criterion.BuiltinTrigger;
 import plus.dragons.createdragonsplus.common.advancements.criterion.StatTrigger;
 import plus.dragons.createdragonsplus.util.CodeReference;
@@ -58,7 +57,7 @@ public abstract class CDPAdvancement {
     private CDPAdvancement parent;
     private final CDPAdvancement.Builder createBuilder = new CDPAdvancement.Builder();
 
-    AdvancementHolder datagenResult;
+    Advancement datagenResult;
 
     private String id;
     private String title;
@@ -71,7 +70,7 @@ public abstract class CDPAdvancement {
 
         if (!createBuilder.externalTrigger) {
             builtinTrigger = add(asResource(id));
-            mcBuilder.addCriterion("0", builtinTrigger.createCriterion(builtinTrigger));
+            mcBuilder.addCriterion("0", builtinTrigger.instance());
         }
 
         if (createBuilder.type == CDPAdvancement.TaskType.SECRET)
@@ -80,14 +79,6 @@ public abstract class CDPAdvancement {
         addToAdvancementEntries();
     }
 
-    /**
-     * This method is a compromise to keep registration in order. </br>
-     * You should make your own BuiltinTrigger registration after Advancement Registration,
-     * or it will throw unregistered problem. </br>
-     * You can check {@link AllTriggers#register()} and {@link com.simibubi.create.Create#onRegister(RegisterEvent)}. <br>
-     * 
-     * @return A BuiltinTrigger
-     */
     protected abstract BuiltinTrigger add(ResourceLocation id);
 
     protected abstract void addToAdvancementEntries();
@@ -107,9 +98,9 @@ public abstract class CDPAdvancement {
     public boolean isAlreadyAwardedTo(Player player) {
         if (!(player instanceof ServerPlayer sp))
             return true;
-        AdvancementHolder advancement = sp.getServer()
+        Advancement advancement = sp.getServer()
                 .getAdvancements()
-                .get(asResource(id));
+                .getAdvancement(asResource(id));
         if (advancement == null)
             return true;
         return sp.getAdvancements()
@@ -125,7 +116,7 @@ public abstract class CDPAdvancement {
     }
 
     private ResourceLocation asResource(String id) {
-        return ResourceLocation.fromNamespaceAndPath(namespace(), id);
+        return new ResourceLocation(namespace(), id);
     }
 
     public void awardTo(Player player) {
@@ -137,7 +128,7 @@ public abstract class CDPAdvancement {
         builtinTrigger.trigger(sp);
     }
 
-    public void save(Consumer<AdvancementHolder> t, HolderLookup.Provider registries) {
+    public void save(Consumer<Advancement> t, HolderLookup.Provider registries) {
         if (parent != null)
             mcBuilder.parent(parent.datagenResult);
 
@@ -146,11 +137,10 @@ public abstract class CDPAdvancement {
 
         mcBuilder.display(createBuilder.icon, Component.translatable(titleKey()),
                 Component.translatable(descriptionKey()).withStyle(s -> s.withColor(0xDBA213)),
-                id.equals("root") ? getBackground() : null, createBuilder.type.advancementType, createBuilder.type.toast,
+                id.equals("root") ? getBackground() : null, createBuilder.type.frameType, createBuilder.type.toast,
                 createBuilder.type.announce, createBuilder.type.hide);
 
-        datagenResult = mcBuilder.save(t, asResource(id)
-                .toString());
+        datagenResult = mcBuilder.save(t, asResource(id).toString());
     }
 
     public void provideLang(BiConsumer<String, String> consumer) {
@@ -159,19 +149,19 @@ public abstract class CDPAdvancement {
     }
 
     public enum TaskType {
-        SILENT(AdvancementType.TASK, false, false, false),
-        NORMAL(AdvancementType.TASK, true, false, false),
-        NOISY(AdvancementType.TASK, true, true, false),
-        EXPERT(AdvancementType.GOAL, true, true, false),
-        SECRET(AdvancementType.GOAL, true, true, true);
+        SILENT(FrameType.TASK, false, false, false),
+        NORMAL(FrameType.TASK, true, false, false),
+        NOISY(FrameType.TASK, true, true, false),
+        EXPERT(FrameType.GOAL, true, true, false),
+        SECRET(FrameType.GOAL, true, true, true);
 
-        private final AdvancementType advancementType;
+        private final FrameType frameType;
         private final boolean toast;
         private final boolean announce;
         private final boolean hide;
 
-        TaskType(AdvancementType advancementType, boolean toast, boolean announce, boolean hide) {
-            this.advancementType = advancementType;
+        TaskType(FrameType frameType, boolean toast, boolean announce, boolean hide) {
+            this.frameType = frameType;
             this.toast = toast;
             this.announce = announce;
             this.hide = hide;
@@ -195,7 +185,7 @@ public abstract class CDPAdvancement {
             return this;
         }
 
-        public CDPAdvancement.Builder icon(ItemProviderEntry<?, ?> item) {
+        public CDPAdvancement.Builder icon(ItemProviderEntry<?> item) {
             return icon(item.asStack());
         }
 
@@ -231,7 +221,7 @@ public abstract class CDPAdvancement {
             return externalTrigger(InventoryChangeTrigger.TriggerInstance.hasItems(icon.getItem()));
         }
 
-        public CDPAdvancement.Builder whenItemCollected(ItemProviderEntry<?, ?> item) {
+        public CDPAdvancement.Builder whenItemCollected(ItemProviderEntry<?> item) {
             return whenItemCollected(item.asStack()
                     .getItem());
         }
@@ -253,7 +243,7 @@ public abstract class CDPAdvancement {
             return externalTrigger(InventoryChangeTrigger.TriggerInstance.hasItems(new ItemLike[] {}));
         }
 
-        public CDPAdvancement.Builder externalTrigger(Criterion<?> trigger) {
+        public CDPAdvancement.Builder externalTrigger(CriterionTriggerInstance trigger) {
             mcBuilder.addCriterion(String.valueOf(keyIndex), trigger);
             externalTrigger = true;
             keyIndex++;

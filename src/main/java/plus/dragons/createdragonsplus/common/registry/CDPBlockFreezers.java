@@ -14,20 +14,26 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  */
 
 package plus.dragons.createdragonsplus.common.registry;
 
-import com.simibubi.create.api.registry.SimpleRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import plus.dragons.createdragonsplus.common.processing.freeze.BlockFreezer;
 
 public class CDPBlockFreezers {
     public static void register() {
-        BlockFreezer.REGISTRY.registerProvider(SimpleRegistry.Provider
-                .forBlockTag(CDPBlocks.MOD_TAGS.passiveBlockFreezers, CDPBlockFreezers::passive));
+        BlockFreezer.REGISTRY.put(Blocks.SNOW_BLOCK, CDPBlockFreezers::passive);
+        BlockFreezer.REGISTRY.put(Blocks.POWDER_SNOW, CDPBlockFreezers::passive);
+        BlockFreezer.REGISTRY.put(Blocks.FROSTED_ICE, CDPBlockFreezers::passive);
+        BlockFreezer.REGISTRY.put(Blocks.ICE, CDPBlockFreezers::passive);
+        BlockFreezer.REGISTRY.put(Blocks.PACKED_ICE, CDPBlockFreezers::passive);
+        BlockFreezer.REGISTRY.put(Blocks.BLUE_ICE, CDPBlockFreezers::passive);
     }
 
     public static float passive(Level level, BlockPos pos, BlockState state) {

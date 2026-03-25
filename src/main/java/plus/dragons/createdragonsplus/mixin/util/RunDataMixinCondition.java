@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,12 +19,8 @@
 
 package plus.dragons.createdragonsplus.mixin.util;
 
-import cpw.mods.modlauncher.Launcher;
-import cpw.mods.modlauncher.api.IEnvironment;
-import cpw.mods.modlauncher.api.ILaunchHandlerService;
-import java.util.Optional;
 import me.fallenbreath.conditionalmixin.api.mixin.ConditionTester;
-import net.neoforged.fml.loading.targets.CommonLaunchHandler;
+import net.minecraftforge.data.loading.DatagenModLoader;
 
 /**
  * {@link ConditionTester} for testing if the current environment is running datagen.
@@ -31,11 +28,6 @@ import net.neoforged.fml.loading.targets.CommonLaunchHandler;
 public class RunDataMixinCondition implements ConditionTester {
     @Override
     public boolean isSatisfied(String mixinClassName) {
-        var environment = Launcher.INSTANCE.environment();
-        var launchTarget = environment.getProperty(IEnvironment.Keys.LAUNCHTARGET.get()).orElse("MISSING");
-        final Optional<ILaunchHandlerService> launchHandler = environment.findLaunchHandler(launchTarget);
-        if (launchHandler.isPresent() && launchHandler.get() instanceof CommonLaunchHandler common)
-            return common.isData();
-        return false;
+        return DatagenModLoader.isRunningDataGen();
     }
 }

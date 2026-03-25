@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +20,19 @@
 package plus.dragons.createdragonsplus.integration;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.registries.ForgeRegistries;
 
 public class CompatUtility {
-    public static Optional<Item> INDUSTRIAL_FAN;
-
     public static List<Supplier<? extends ItemStack>> catalystWithIndustryFan(ItemStack fan) {
-        if (INDUSTRIAL_FAN == null) {
-            INDUSTRIAL_FAN = DeferredHolder.create(Registries.ITEM, ModIntegration.CREATE_DND.asResource("industrial_fan")).asOptional();
+        if (ModIntegration.CREATE_DND.enabled()) {
+            Item industrialFan = ForgeRegistries.ITEMS.getValue(ModIntegration.CREATE_DND.asResource("industrial_fan"));
+            if (industrialFan != null) {
+                return List.of(() -> fan, () -> new ItemStack(industrialFan));
+            }
         }
-        return INDUSTRIAL_FAN.<List<Supplier<? extends ItemStack>>>map(item -> List.of(() -> fan, () -> new ItemStack(item))).orElseGet(() -> List.of(() -> fan));
+        return List.of(() -> fan);
     }
 }

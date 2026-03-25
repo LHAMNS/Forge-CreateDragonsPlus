@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,13 +20,16 @@
 package plus.dragons.createdragonsplus.common.kinetics.fan.ending;
 
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
-import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
+import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
 import com.simibubi.create.foundation.recipe.RecipeApplier;
+import com.simibubi.create.foundation.utility.Color;
 import java.util.List;
 import java.util.Optional;
-import net.createmod.catnip.theme.Color;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -33,10 +37,13 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.wrapper.RecipeWrapper;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.registry.CDPBlocks;
 import plus.dragons.createdragonsplus.common.registry.CDPFluids;
@@ -45,12 +52,16 @@ import plus.dragons.createdragonsplus.config.CDPConfig;
 import plus.dragons.createdragonsplus.integration.ModIntegration;
 
 public class EndingFanProcessingType implements FanProcessingType {
-    private final DeferredHolder<FanProcessingType, FanProcessingType> createDNDType;
-    private final DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> createDNDRecipe;
+    private final ResourceLocation createDNDRecipeTypeId;
+    private final TagKey<Block> createDNDBlockCatalysts;
+    private final TagKey<Fluid> createDNDFluidCatalysts;
 
     public EndingFanProcessingType() {
-        this.createDNDType = ModIntegration.CREATE_DND.fanType("dragon_breathing");
-        this.createDNDRecipe = ModIntegration.CREATE_DND.recipeType("dragon_breathing");
+        this.createDNDRecipeTypeId = ModIntegration.CREATE_DND.asResource("dragon_breathing");
+        this.createDNDBlockCatalysts = TagKey.create(Registries.BLOCK,
+                ModIntegration.CREATE_DND.asResource("fan_processing_catalysts/dragon_breathing"));
+        this.createDNDFluidCatalysts = TagKey.create(Registries.FLUID,
+                ModIntegration.CREATE_DND.asResource("fan_processing_catalysts/dragon_breathing"));
     }
 
     @Override
@@ -63,7 +74,13 @@ public class EndingFanProcessingType implements FanProcessingType {
         var state = level.getBlockState(pos);
         if (state.is(CDPBlocks.MOD_TAGS.fanEndingCatalysts))
             return true;
-        return createDNDType.isBound() && createDNDType.get().isValidAt(level, pos);
+        if (ModIntegration.CREATE_DND.enabled()) {
+            if (fluidState.is(createDNDFluidCatalysts))
+                return true;
+            if (state.is(createDNDBlockCatalysts))
+                return true;
+        }
+        return false;
     }
 
     @Override
@@ -76,22 +93,22 @@ public class EndingFanProcessingType implements FanProcessingType {
         if (!CDPConfig.recipes().enableBulkEnding.get())
             return false;
         var recipeManager = level.getRecipeManager();
-        var input = new SingleRecipeInput(stack);
+        RecipeWrapper input = createSingleItemWrapper(stack);
         if (recipeManager
                 .getRecipeFor(CDPRecipes.ENDING.getType(), input, level)
                 .isPresent())
             return true;
-        return canProcessByCompatRecipe(createDNDRecipe, stack, level);
+        return canProcessByCompatRecipe(createDNDRecipeTypeId, stack, level);
     }
 
     @Override
     public @Nullable List<ItemStack> process(ItemStack stack, Level level) {
         var recipeManager = level.getRecipeManager();
-        var input = new SingleRecipeInput(stack);
+        RecipeWrapper input = createSingleItemWrapper(stack);
         return recipeManager
                 .getRecipeFor(CDPRecipes.ENDING.getType(), input, level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true))
-                .or(() -> processByCompatRecipe(createDNDRecipe, stack, level))
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+                .or(() -> processByCompatRecipe(createDNDRecipeTypeId, stack, level))
                 .orElse(null);
     }
 
@@ -122,25 +139,37 @@ public class EndingFanProcessingType implements FanProcessingType {
         if (entity instanceof LivingEntity livingEntity && livingEntity.isAffectedByPotions() && entity.tickCount % 5 == 0) {
             livingEntity.addEffect(new MobEffectInstance(MobEffects.HARM, 1, 1));
         }
-        if (createDNDType.isBound()) {
-            createDNDType.get().affectEntity(entity, level);
-        }
     }
 
-    private boolean canProcessByCompatRecipe(DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType,
-            ItemStack stack, Level level) {
-        if (!recipeType.isBound())
+    @SuppressWarnings("unchecked")
+    private boolean canProcessByCompatRecipe(ResourceLocation recipeTypeId, ItemStack stack, Level level) {
+        if (!ModIntegration.CREATE_DND.enabled())
             return false;
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(recipeTypeId);
+        if (recipeType == null)
+            return false;
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(recipeType.get(), new SingleRecipeInput(stack), level)
+                .getRecipeFor(recipeType, wrapper, level)
                 .isPresent();
     }
 
-    private Optional<List<ItemStack>> processByCompatRecipe(DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType, ItemStack stack, Level level) {
-        if (!recipeType.isBound())
+    @SuppressWarnings("unchecked")
+    private Optional<List<ItemStack>> processByCompatRecipe(ResourceLocation recipeTypeId, ItemStack stack, Level level) {
+        if (!ModIntegration.CREATE_DND.enabled())
             return Optional.empty();
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(recipeTypeId);
+        if (recipeType == null)
+            return Optional.empty();
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(recipeType.get(), new SingleRecipeInput(stack), level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true));
+                .getRecipeFor(recipeType, wrapper, level)
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe));
+    }
+
+    private static RecipeWrapper createSingleItemWrapper(ItemStack stack) {
+        ItemStackHandler handler = new ItemStackHandler(1);
+        handler.setStackInSlot(0, stack);
+        return new RecipeWrapper(handler);
     }
 }

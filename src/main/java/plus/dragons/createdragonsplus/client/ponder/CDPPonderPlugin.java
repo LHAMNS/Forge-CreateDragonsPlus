@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,19 +19,12 @@
 
 package plus.dragons.createdragonsplus.client.ponder;
 
-import net.createmod.ponder.api.registration.PonderPlugin;
-import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
-import net.minecraft.resources.ResourceLocation;
-import plus.dragons.createdragonsplus.common.CDPCommon;
-
-public class CDPPonderPlugin implements PonderPlugin {
-    @Override
-    public String getModId() {
-        return CDPCommon.ID;
-    }
-
-    @Override
-    public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        CDPPonderScenes.register(helper);
-    }
+/**
+ * In Create 0.5.1.f, Ponder does not use a plugin-based registration system.
+ * Registration is done directly via {@link CDPPonderScenes#register()}.
+ * This class is kept as a placeholder for compatibility references.
+ */
+public class CDPPonderPlugin {
+    // No-op: Create 0.5.1.f uses direct PonderRegistry calls instead of PonderPlugin.
+    // See CDPPonderScenes.register() for the actual registration.
 }

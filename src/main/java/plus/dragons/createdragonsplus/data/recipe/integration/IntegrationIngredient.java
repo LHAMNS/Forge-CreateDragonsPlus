@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +19,7 @@
 
 package plus.dragons.createdragonsplus.data.recipe.integration;
 
-import com.mojang.serialization.MapCodec;
+import com.google.gson.JsonObject;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -29,7 +30,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 public class IntegrationIngredient {
     public static Ingredient of(String mod, String name) {
-        return of(ResourceLocation.fromNamespaceAndPath(mod, name));
+        return of(new ResourceLocation(mod, name));
     }
 
     public static Ingredient of(ResourceLocation location) {
@@ -40,13 +41,27 @@ public class IntegrationIngredient {
         return Ingredient.fromValues(Arrays.stream(locations).map(Value::new));
     }
 
-    public record Value(ResourceLocation location) implements Ingredient.Value {
-        public static final MapCodec<Value> MAP_CODEC = ResourceLocation.CODEC.fieldOf("item")
-                .xmap(Value::new, Value::location);
+    public static class Value implements Ingredient.Value {
+        private final ResourceLocation location;
+
+        public Value(ResourceLocation location) {
+            this.location = location;
+        }
+
+        public ResourceLocation location() {
+            return location;
+        }
 
         @Override
         public Collection<ItemStack> getItems() {
             return List.of();
+        }
+
+        @Override
+        public JsonObject serialize() {
+            JsonObject json = new JsonObject();
+            json.addProperty("item", location.toString());
+            return json;
         }
     }
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +19,6 @@
 
 package plus.dragons.createdragonsplus.common.fluids.hatch;
 
-import com.mojang.serialization.MapCodec;
 import com.simibubi.create.AllShapes;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.fluids.tank.CreativeFluidTankBlockEntity;
@@ -31,7 +31,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
 import com.simibubi.create.foundation.fluid.FluidHelper;
 import com.simibubi.create.foundation.fluid.FluidHelper.FluidExchange;
-import net.createmod.catnip.data.Pair;
+import com.simibubi.create.foundation.utility.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -40,7 +40,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -58,16 +57,15 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.neoforge.capabilities.Capabilities.FluidHandler;
-import net.neoforged.neoforge.common.util.FakePlayer;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.registry.CDPBlockEntities;
 
 public class FluidHatchBlock extends HorizontalDirectionalBlock implements IBE<FluidHatchBlockEntity>, IWrenchable, ProperWaterloggedBlock {
-    public static final MapCodec<FluidHatchBlock> CODEC = simpleCodec(FluidHatchBlock::new);
 
     public FluidHatchBlock(Properties properties) {
         super(properties);
@@ -102,30 +100,28 @@ public class FluidHatchBlock extends HorizontalDirectionalBlock implements IBE<F
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        // Handled by mixins
-        return super.useWithoutItem(state, level, pos, player, hitResult);
-    }
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (stack.isEmpty())
+            return InteractionResult.PASS;
 
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (level.isClientSide())
-            return ItemInteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
 
         if (player instanceof FakePlayer)
-            return ItemInteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
 
         BlockEntity blockEntity = level.getBlockEntity(pos.relative(state.getValue(FACING)));
         if (blockEntity == null)
-            return ItemInteractionResult.FAIL;
+            return InteractionResult.FAIL;
 
-        IFluidHandler tankCapability = level.getCapability(FluidHandler.BLOCK, blockEntity.getBlockPos(), null);
+        IFluidHandler tankCapability = blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER).orElse(null);
         if (tankCapability == null)
-            return ItemInteractionResult.FAIL;
+            return InteractionResult.FAIL;
 
         FilteringBehaviour filter = BlockEntityBehaviour.get(level, pos, FilteringBehaviour.TYPE);
         if (filter == null)
-            return ItemInteractionResult.FAIL;
+            return InteractionResult.FAIL;
 
         FluidExchange exchange;
         FluidStack fluidStack;
@@ -135,14 +131,16 @@ public class FluidHatchBlock extends HorizontalDirectionalBlock implements IBE<F
             exchange = FluidExchange.TANK_TO_ITEM;
         } else {
             if (GenericItemEmptying.canItemBeEmptied(level, stack) || GenericItemFilling.canItemBeFilled(level, stack))
-                return ItemInteractionResult.SUCCESS;
-            return ItemInteractionResult.FAIL;
+                return InteractionResult.SUCCESS;
+            return InteractionResult.FAIL;
         }
 
-        SoundEvent soundevent = switch (exchange) {
-            case ITEM_TO_TANK -> FluidHelper.getEmptySound(fluidStack);
-            case TANK_TO_ITEM -> FluidHelper.getFillSound(fluidStack);
-        };
+        SoundEvent soundevent;
+        if (exchange == FluidExchange.ITEM_TO_TANK) {
+            soundevent = FluidHelper.getEmptySound(fluidStack);
+        } else {
+            soundevent = FluidHelper.getFillSound(fluidStack);
+        }
         if (soundevent != null && !level.isClientSide) {
             float pitch = Mth.clamp(1 - (fluidStack.getAmount() / (FluidTankBlockEntity.getCapacityMultiplier() * 16f)), 0, 1);
             pitch /= 1.5f;
@@ -151,7 +149,7 @@ public class FluidHatchBlock extends HorizontalDirectionalBlock implements IBE<F
             level.playSound(null, pos, soundevent, SoundSource.BLOCKS, .5f, pitch);
         }
 
-        return ItemInteractionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     public FluidStack tryEmptyItem(
@@ -258,12 +256,7 @@ public class FluidHatchBlock extends HorizontalDirectionalBlock implements IBE<F
     }
 
     @Override
-    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+    public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType pathComputationType) {
         return false;
-    }
-
-    @Override
-    protected MapCodec<? extends HorizontalDirectionalBlock> codec() {
-        return CODEC;
     }
 }

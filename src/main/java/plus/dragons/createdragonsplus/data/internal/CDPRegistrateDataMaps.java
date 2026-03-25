@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,23 +19,10 @@
 
 package plus.dragons.createdragonsplus.data.internal;
 
-import com.tterrag.registrate.providers.RegistrateDataMapProvider;
-import com.tterrag.registrate.util.nullness.NonNullConsumer;
-import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
-import plus.dragons.createdragonsplus.common.fluids.dye.DyeColors;
-import plus.dragons.createdragonsplus.common.registry.CDPDataMaps;
-import plus.dragons.createdragonsplus.integration.ModIntegration;
-
-public class CDPRegistrateDataMaps implements NonNullConsumer<RegistrateDataMapProvider> {
-    @Override
-    public void accept(RegistrateDataMapProvider provider) {
-        var fanColoringCatalystFluids = provider.builder(CDPDataMaps.FLUID_FAN_COLORING_CATALYSTS);
-        var garnishedLoaded = new ModLoadedCondition("garnished");
-        for (var color : DyeColors.ALL) {
-            var still = ModIntegration.CREATE_GARNISHED.asResource(color.getSerializedName() + "_mastic_resin");
-            var flowing = still.withPrefix("flowing_");
-            fanColoringCatalystFluids.add(still, color, false, garnishedLoaded);
-            fanColoringCatalystFluids.add(flowing, color, false, garnishedLoaded);
-        }
-    }
+/**
+ * DataMaps are a NeoForge 1.21+ feature and are not available in Forge 1.20.1.
+ * Fan coloring catalyst fluids are configured through tags or direct registration instead.
+ * This class is kept as a placeholder for reference.
+ */
+public class CDPRegistrateDataMaps {
 }

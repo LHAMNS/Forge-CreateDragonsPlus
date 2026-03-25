@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,76 +19,54 @@
 
 package plus.dragons.createdragonsplus.config;
 
-import net.minecraft.Util;
-import net.minecraft.util.Unit;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.config.ModConfig.Type;
-import net.neoforged.fml.event.config.ModConfigEvent;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class CDPConfig {
-    private static final CDPCommonConfig COMMON_CONFIG = new CDPCommonConfig();
-    private static final CDPClientConfig CLIENT_CONFIG = new CDPClientConfig();
-    private static final CDPServerConfig SERVER_CONFIG = new CDPServerConfig();
-    private static ModConfigSpec COMMON_SPEC;
-    private static ModConfigSpec CLIENT_SPEC;
-    private static ModConfigSpec SERVER_SPEC;
+    private static CDPCommonConfig COMMON;
+    private static CDPClientConfig CLIENT;
+    private static CDPServerConfig SERVER;
 
-    public CDPConfig(ModContainer container) {
-        COMMON_SPEC = Util.make(new ModConfigSpec.Builder().configure(builder -> {
-            COMMON_CONFIG.registerAll(builder);
-            return Unit.INSTANCE;
-        }).getValue(), spec -> container.registerConfig(Type.COMMON, spec));
-        CLIENT_SPEC = Util.make(new ModConfigSpec.Builder().configure(builder -> {
-            CLIENT_CONFIG.registerAll(builder);
-            return Unit.INSTANCE;
-        }).getValue(), spec -> container.registerConfig(Type.CLIENT, spec));
-        SERVER_SPEC = Util.make(new ModConfigSpec.Builder().configure(builder -> {
-            SERVER_CONFIG.registerAll(builder);
-            return Unit.INSTANCE;
-        }).getValue(), spec -> container.registerConfig(Type.SERVER, spec));
+    public static void register() {
+        Pair<CDPCommonConfig, ForgeConfigSpec> commonPair = buildSpec(new CDPCommonConfig());
+        COMMON = commonPair.getLeft();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, commonPair.getRight());
+
+        Pair<CDPClientConfig, ForgeConfigSpec> clientPair = buildSpec(new CDPClientConfig());
+        CLIENT = clientPair.getLeft();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, clientPair.getRight());
+
+        Pair<CDPServerConfig, ForgeConfigSpec> serverPair = buildSpec(new CDPServerConfig());
+        SERVER = serverPair.getLeft();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, serverPair.getRight());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends com.simibubi.create.foundation.config.ConfigBase> Pair<T, ForgeConfigSpec> buildSpec(T config) {
+        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        config.registerAll(builder);
+        return Pair.of(config, builder.build());
     }
 
     public static CDPCommonConfig common() {
-        return COMMON_CONFIG;
+        return COMMON;
     }
 
     public static CDPClientConfig client() {
-        return CLIENT_CONFIG;
+        return CLIENT;
     }
 
     public static CDPServerConfig server() {
-        return SERVER_CONFIG;
+        return SERVER;
     }
 
     public static CDPFeaturesConfig features() {
-        return COMMON_CONFIG.features;
+        return COMMON.features;
     }
 
     public static CDPRecipesConfig recipes() {
-        return SERVER_CONFIG.recipes;
-    }
-
-    @SubscribeEvent
-    public void onLoad(ModConfigEvent.Loading event) {
-        var spec = event.getConfig().getSpec();
-        if (spec == COMMON_SPEC)
-            COMMON_CONFIG.onLoad();
-        else if (spec == CLIENT_SPEC)
-            CLIENT_CONFIG.onLoad();
-        else if (spec == SERVER_SPEC)
-            SERVER_CONFIG.onLoad();
-    }
-
-    @SubscribeEvent
-    public void onReload(ModConfigEvent.Reloading event) {
-        var spec = event.getConfig().getSpec();
-        if (spec == COMMON_SPEC)
-            COMMON_CONFIG.onReload();
-        else if (spec == CLIENT_SPEC)
-            CLIENT_CONFIG.onReload();
-        else if (spec == SERVER_SPEC)
-            SERVER_CONFIG.onReload();
+        return SERVER.recipes;
     }
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,16 +25,15 @@ import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
 import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
 import com.simibubi.create.foundation.item.ItemHelper;
 import com.simibubi.create.foundation.recipe.RecipeApplier;
+import com.simibubi.create.foundation.utility.Color;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import java.util.List;
 import java.util.Optional;
-import net.createmod.catnip.theme.Color;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.particles.DustParticleOptions;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -46,18 +46,21 @@ import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.wrapper.RecipeWrapper;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
-import plus.dragons.createdragonsplus.common.registry.CDPDataMaps;
+import plus.dragons.createdragonsplus.common.registry.CDPFluids;
 import plus.dragons.createdragonsplus.common.registry.CDPItems;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
 import plus.dragons.createdragonsplus.config.CDPConfig;
@@ -67,21 +70,35 @@ import plus.dragons.createdragonsplus.util.PersistentDataHelper;
 public class ColoringFanProcessingType implements FanProcessingType {
     private final DyeColor color;
     private final Vector3f rgb;
-    private final DeferredHolder<RecipeType<?>, RecipeType<ProcessingRecipe<SingleRecipeInput, ?>>> createGarnishedRecipe;
+    private final ResourceLocation createGarnishedRecipeTypeId;
 
     public ColoringFanProcessingType(DyeColor color) {
         this.color = color;
         this.rgb = new Color(this.color.getTextureDiffuseColor()).asVectorF();
-        this.createGarnishedRecipe = DeferredHolder.create(Registries.RECIPE_TYPE, ModIntegration.CREATE_GARNISHED.asResource(color.getSerializedName() + "_dye_blowing"));
+        this.createGarnishedRecipeTypeId = new ResourceLocation(
+                ModIntegration.Constants.CREATE_GARNISHED,
+                color.getSerializedName() + "_dye_blowing");
     }
 
     @Override
     public boolean isValidAt(Level level, BlockPos pos) {
         if (!CDPConfig.recipes().enableBulkColoring.get())
             return false;
-        if (level.getFluidState(pos).holder().getData(CDPDataMaps.FLUID_FAN_COLORING_CATALYSTS) == this.color)
-            return true;
-        return level.getBlockState(pos).getBlockHolder().getData(CDPDataMaps.BLOCK_FAN_COLORING_CATALYSTS) == this.color;
+        var fluidState = level.getFluidState(pos);
+        if (!fluidState.isEmpty()) {
+            var fluid = fluidState.getType();
+            // Check against mod's own dye fluids
+            var dyeFluidEntry = CDPFluids.DYES_BY_COLOR.get(this.color);
+            if (dyeFluidEntry != null && (fluid == dyeFluidEntry.get() || fluid == dyeFluidEntry.getSource())) {
+                return true;
+            }
+            // Check against common dye fluid tags
+            var dyeTag = CDPFluids.COMMON_TAGS.dyesByColor.get(this.color);
+            if (dyeTag != null && fluidState.is(dyeTag)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -106,7 +123,7 @@ public class ColoringFanProcessingType implements FanProcessingType {
     public @Nullable List<ItemStack> process(ItemStack stack, Level level) {
         return level.getRecipeManager()
                 .getRecipeFor(CDPRecipes.COLORING.getType(), new ColoringRecipeInput(this.color, stack), level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true))
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
                 .or(() -> processByCreateGarnished(stack, level))
                 .or(() -> processByCrafting(stack, level)
                         .map(result -> ItemHelper.multipliedOutput(stack, result)))
@@ -146,41 +163,54 @@ public class ColoringFanProcessingType implements FanProcessingType {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private boolean canProcessByCreateGarnished(ItemStack stack, Level level) {
-        if (!createGarnishedRecipe.isBound())
+        if (!ModIntegration.CREATE_GARNISHED.enabled())
             return false;
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(createGarnishedRecipeTypeId);
+        if (recipeType == null)
+            return false;
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(createGarnishedRecipe.get(), new SingleRecipeInput(stack), level)
+                .getRecipeFor(recipeType, wrapper, level)
                 .isPresent();
     }
 
+    @SuppressWarnings("unchecked")
     private Optional<List<ItemStack>> processByCreateGarnished(ItemStack stack, Level level) {
-        if (!createGarnishedRecipe.isBound())
+        if (!ModIntegration.CREATE_GARNISHED.enabled())
             return Optional.empty();
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(createGarnishedRecipeTypeId);
+        if (recipeType == null)
+            return Optional.empty();
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(createGarnishedRecipe.get(), new SingleRecipeInput(stack), level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true));
+                .getRecipeFor(recipeType, wrapper, level)
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe));
     }
 
     private Optional<ItemStack> processByCrafting(ItemStack stack, Level level) {
         if (stack.is(CDPItems.MOD_TAGS.notApplicableColoring))
             return Optional.empty();
         // 1 Dye + 1 Colorless = 1 Dyed
-        var input = CraftingInput.of(2, 1, List.of(stack, new ItemStack(DyeItem.byColor(this.color))));
+        CraftingContainer input = createCraftingContainer(2, 1,
+                stack, new ItemStack(DyeItem.byColor(this.color)));
         var optional = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level);
         if (optional.isPresent()) {
-            var recipe = optional.get().value();
+            var recipe = optional.get();
             var result = recipe.assemble(input, level.registryAccess());
             // Not a coloring recipe if result count is not 1
             return result.getCount() == 1 ? Optional.of(result) : Optional.empty();
         }
         // 1 Dye + 8 Colorless = 8 Dyed
-        var items = NonNullList.withSize(9, stack);
-        items.set(4, new ItemStack(DyeItem.byColor(this.color)));
-        input = CraftingInput.of(3, 3, items);
+        ItemStack[] items = new ItemStack[9];
+        for (int i = 0; i < 9; i++) {
+            items[i] = i == 4 ? new ItemStack(DyeItem.byColor(this.color)) : stack.copy();
+        }
+        input = createCraftingContainer(3, 3, items);
         optional = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, input, level);
         if (optional.isPresent()) {
-            var recipe = optional.get().value();
+            var recipe = optional.get();
             var result = recipe.assemble(input, level.registryAccess());
             // Not a coloring recipe if result count is not 8
             if (result.getCount() != 8)
@@ -193,12 +223,14 @@ public class ColoringFanProcessingType implements FanProcessingType {
 
     public void applyColoring(LivingEntity entity, Level level) {
         if (processColoring(entity)) {
-            switch (entity) {
-                case Sheep sheep -> sheep.setColor(this.color);
-                case Shulker shulker -> shulker.setVariant(Optional.of(this.color));
-                case Cat cat -> cat.setCollarColor(this.color);
-                case Wolf wolf -> wolf.setCollarColor(this.color);
-                default -> {}
+            if (entity instanceof Sheep sheep) {
+                sheep.setColor(this.color);
+            } else if (entity instanceof Shulker shulker) {
+                shulker.getEntityData().set(Shulker.DATA_COLOR_ID, (byte) this.color.getId());
+            } else if (entity instanceof Cat cat) {
+                cat.setCollarColor(this.color);
+            } else if (entity instanceof Wolf wolf) {
+                wolf.setCollarColor(this.color);
             }
             for (var slot : EquipmentSlot.values()) {
                 ItemStack stack = entity.getItemBySlot(slot);
@@ -243,9 +275,33 @@ public class ColoringFanProcessingType implements FanProcessingType {
         var coloringInput = new ColoringRecipeInput(this.color, stack);
         var coloringRecipe = level.getRecipeManager().getRecipeFor(CDPRecipes.COLORING.getType(), coloringInput, level);
         if (coloringRecipe.isPresent()) {
-            ItemStack result = coloringRecipe.get().value().assemble(coloringInput, level.registryAccess());
+            ItemStack result = coloringRecipe.get().assemble(coloringInput, level.registryAccess());
             return Optional.of(result);
         }
         return this.processByCrafting(stack, level);
+    }
+
+    private static RecipeWrapper createSingleItemWrapper(ItemStack stack) {
+        ItemStackHandler handler = new ItemStackHandler(1);
+        handler.setStackInSlot(0, stack);
+        return new RecipeWrapper(handler);
+    }
+
+    private static CraftingContainer createCraftingContainer(int width, int height, ItemStack... items) {
+        TransientCraftingContainer container = new TransientCraftingContainer(new AbstractContainerMenu(null, -1) {
+            @Override
+            public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int index) {
+                return ItemStack.EMPTY;
+            }
+
+            @Override
+            public boolean stillValid(net.minecraft.world.entity.player.Player player) {
+                return false;
+            }
+        }, width, height);
+        for (int i = 0; i < items.length && i < container.getContainerSize(); i++) {
+            container.setItem(i, items[i]);
+        }
+        return container;
     }
 }

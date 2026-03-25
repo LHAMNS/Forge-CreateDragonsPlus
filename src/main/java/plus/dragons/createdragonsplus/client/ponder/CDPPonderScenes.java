@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,26 +20,25 @@
 package plus.dragons.createdragonsplus.client.ponder;
 
 import com.simibubi.create.AllBlocks;
-import com.tterrag.registrate.util.entry.ItemProviderEntry;
-import com.tterrag.registrate.util.entry.RegistryEntry;
-import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
+import com.simibubi.create.foundation.ponder.PonderRegistrationHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
 import plus.dragons.createdragonsplus.client.ponder.scenes.CDPFanScenes;
 import plus.dragons.createdragonsplus.client.ponder.scenes.SandingScenes;
+import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.registry.CDPBlocks;
 import plus.dragons.createdragonsplus.integration.ModIntegration;
 
 public class CDPPonderScenes {
-    public static void register(PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        var registration = helper.<ItemProviderEntry<?, ?>>withKeyFunction(RegistryEntry::getId);
-        registration.forComponents(AllBlocks.ENCASED_FAN)
+    private static final PonderRegistrationHelper HELPER = new PonderRegistrationHelper(CDPCommon.ID);
+
+    public static void register() {
+        HELPER.forComponents(AllBlocks.ENCASED_FAN)
                 .addStoryBoard("bulk_coloring", CDPFanScenes::bulkColoring)
                 .addStoryBoard("bulk_freezing", CDPFanScenes::bulkFreezing)
                 .addStoryBoard("bulk_ending", CDPFanScenes::bulkEnding);
 
         if (ModIntegration.QUICKSAND.enabled() || ModIntegration.CREATE_DND.enabled() || BuiltInRegistries.BLOCK.getTag(CDPBlocks.MOD_TAGS.fanSandingCatalysts).isPresent()) {
-            registration.forComponents(AllBlocks.ENCASED_FAN)
+            HELPER.forComponents(AllBlocks.ENCASED_FAN)
                     .addStoryBoard("bulk_sanding", SandingScenes::bulkSanding);
         }
     }

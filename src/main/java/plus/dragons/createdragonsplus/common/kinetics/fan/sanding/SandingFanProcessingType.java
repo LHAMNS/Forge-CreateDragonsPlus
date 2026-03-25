@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +22,7 @@ package plus.dragons.createdragonsplus.common.kinetics.fan.sanding;
 import com.simibubi.create.AllRecipeTypes;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
-import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
+import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
 import com.simibubi.create.foundation.recipe.RecipeApplier;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import java.util.List;
@@ -30,17 +31,22 @@ import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.wrapper.RecipeWrapper;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.kinetics.fan.DynamicParticleFanProcessingType;
 import plus.dragons.createdragonsplus.common.kinetics.fan.sanding.SandingFanProcessingType.ParticleData;
@@ -50,12 +56,13 @@ import plus.dragons.createdragonsplus.config.CDPConfig;
 import plus.dragons.createdragonsplus.integration.ModIntegration;
 
 public class SandingFanProcessingType implements DynamicParticleFanProcessingType<ParticleData> {
-    private final DeferredHolder<FanProcessingType, FanProcessingType> createDNDType;
-    private final DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> createDNDRecipe;
+    private final ResourceLocation createDNDRecipeTypeId;
+    private final TagKey<Block> createDNDBlockCatalysts;
 
     public SandingFanProcessingType() {
-        this.createDNDType = ModIntegration.CREATE_DND.fanType("sanding");
-        this.createDNDRecipe = ModIntegration.CREATE_DND.recipeType("sanding");
+        this.createDNDRecipeTypeId = ModIntegration.CREATE_DND.asResource("sanding");
+        this.createDNDBlockCatalysts = TagKey.create(Registries.BLOCK,
+                ModIntegration.CREATE_DND.asResource("fan_processing_catalysts/sanding"));
     }
 
     @Override
@@ -64,7 +71,9 @@ public class SandingFanProcessingType implements DynamicParticleFanProcessingTyp
             return false;
         var state = level.getBlockState(pos);
         if (state.is(CDPBlocks.MOD_TAGS.fanSandingCatalysts)) return true;
-        return createDNDType.isBound() && createDNDType.get().isValidAt(level, pos);
+        if (ModIntegration.CREATE_DND.enabled() && state.is(createDNDBlockCatalysts))
+            return true;
+        return false;
     }
 
     @Override
@@ -72,31 +81,31 @@ public class SandingFanProcessingType implements DynamicParticleFanProcessingTyp
         return 700; // Should be greater than Bulk Freezing
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean canProcess(ItemStack stack, Level level) {
         if (!CDPConfig.recipes().enableBulkSanding.get())
             return false;
         var recipeManager = level.getRecipeManager();
-        var input = new SingleRecipeInput(stack);
+        RecipeWrapper input = createSingleItemWrapper(stack);
         var recipe = recipeManager
-                .getRecipeFor((RecipeType<? extends StandardProcessingRecipe<SingleRecipeInput>>) CDPRecipes.SANDING.getType(), input, level)
-                .or(() -> recipeManager.getRecipeFor(AllRecipeTypes.SANDPAPER_POLISHING.getType(), input, level))
-                .filter(AllRecipeTypes.CAN_BE_AUTOMATED);
+                .getRecipeFor(CDPRecipes.SANDING.getType(), input, level)
+                .or(() -> recipeManager.getRecipeFor(AllRecipeTypes.SANDPAPER_POLISHING.getType(), input, level));
         if (recipe.isPresent())
             return true;
-        return canProcessByCompatRecipe(createDNDRecipe, stack, level);
+        return canProcessByCompatRecipe(createDNDRecipeTypeId, stack, level);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public @Nullable List<ItemStack> process(ItemStack stack, Level level) {
         var recipeManager = level.getRecipeManager();
-        var input = new SingleRecipeInput(stack);
+        RecipeWrapper input = createSingleItemWrapper(stack);
         return recipeManager
-                .getRecipeFor((RecipeType<? extends StandardProcessingRecipe<SingleRecipeInput>>) CDPRecipes.SANDING.getType(), input, level)
+                .getRecipeFor(CDPRecipes.SANDING.getType(), input, level)
                 .or(() -> recipeManager.getRecipeFor(AllRecipeTypes.SANDPAPER_POLISHING.getType(), input, level))
-                .filter(AllRecipeTypes.CAN_BE_AUTOMATED)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true))
-                .or(() -> processByCompatRecipe(createDNDRecipe, stack, level))
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+                .or(() -> processByCompatRecipe(createDNDRecipeTypeId, stack, level))
                 .orElse(null);
     }
 
@@ -165,20 +174,35 @@ public class SandingFanProcessingType implements DynamicParticleFanProcessingTyp
         }
     }
 
-    private boolean canProcessByCompatRecipe(DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType,
-            ItemStack stack, Level level) {
-        if (!recipeType.isBound())
+    @SuppressWarnings("unchecked")
+    private boolean canProcessByCompatRecipe(ResourceLocation recipeTypeId, ItemStack stack, Level level) {
+        if (!ModIntegration.CREATE_DND.enabled())
             return false;
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(recipeTypeId);
+        if (recipeType == null)
+            return false;
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(recipeType.get(), new SingleRecipeInput(stack), level)
+                .getRecipeFor(recipeType, wrapper, level)
                 .isPresent();
     }
 
-    private Optional<List<ItemStack>> processByCompatRecipe(DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType, ItemStack stack, Level level) {
-        if (!recipeType.isBound())
+    @SuppressWarnings("unchecked")
+    private Optional<List<ItemStack>> processByCompatRecipe(ResourceLocation recipeTypeId, ItemStack stack, Level level) {
+        if (!ModIntegration.CREATE_DND.enabled())
             return Optional.empty();
+        var recipeType = (RecipeType<ProcessingRecipe<?>>) ForgeRegistries.RECIPE_TYPES.getValue(recipeTypeId);
+        if (recipeType == null)
+            return Optional.empty();
+        RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
-                .getRecipeFor(recipeType.get(), new SingleRecipeInput(stack), level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe.value(), true));
+                .getRecipeFor(recipeType, wrapper, level)
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe));
+    }
+
+    private static RecipeWrapper createSingleItemWrapper(ItemStack stack) {
+        ItemStackHandler handler = new ItemStackHandler(1);
+        handler.setStackInSlot(0, stack);
+        return new RecipeWrapper(handler);
     }
 }

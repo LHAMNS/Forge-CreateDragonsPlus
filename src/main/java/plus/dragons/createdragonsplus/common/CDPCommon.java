@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,53 +20,35 @@
 package plus.dragons.createdragonsplus.common;
 
 import com.simibubi.create.foundation.item.ItemDescription;
-import java.util.concurrent.CompletableFuture;
-import net.createmod.catnip.lang.FontHelper;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.network.chat.Component;
+import com.simibubi.create.foundation.item.TooltipHelper;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.RegistryLayer;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.repository.Pack.Position;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLConstructModEvent;
-import net.neoforged.neoforge.event.AddPackFindersEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import plus.dragons.createdragonsplus.common.registry.CDPBlockEntities;
 import plus.dragons.createdragonsplus.common.registry.CDPBlockFreezers;
 import plus.dragons.createdragonsplus.common.registry.CDPBlocks;
 import plus.dragons.createdragonsplus.common.registry.CDPConditions;
 import plus.dragons.createdragonsplus.common.registry.CDPCreativeModeTabs;
 import plus.dragons.createdragonsplus.common.registry.CDPCriterions;
-import plus.dragons.createdragonsplus.common.registry.CDPDataMaps;
 import plus.dragons.createdragonsplus.common.registry.CDPFanProcessingTypes;
 import plus.dragons.createdragonsplus.common.registry.CDPFluids;
-import plus.dragons.createdragonsplus.common.registry.CDPItemAttributes;
 import plus.dragons.createdragonsplus.common.registry.CDPItems;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
 import plus.dragons.createdragonsplus.config.CDPConfig;
-import plus.dragons.createdragonsplus.data.internal.CDPRuntimeRecipeProvider;
-import plus.dragons.createdragonsplus.data.runtime.RuntimePackResources;
-import plus.dragons.createdragonsplus.integration.ModIntegration;
 
 @Mod(CDPCommon.ID)
 public class CDPCommon {
     public static final String ID = "create_dragons_plus";
     public static final String NAME = "Create: Dragons Plus";
     public static final String PERSISTENT_DATA_KEY = "CreateDragonsPlusData";
-    public static final CDPRegistrate REGISTRATE = new CDPRegistrate(ID)
-            .setTooltipModifier(item -> new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE));
-    private final ModContainer modContainer;
-    private final Component runtimePackTitle = REGISTRATE
-            .addLang("pack", asResource("runtime"), NAME);
-    private final Component runtimePackDescription = REGISTRATE
-            .addLang("pack", asResource("runtime"), "description", NAME + " Runtime Generated Resources");
+    public static final CDPRegistrate REGISTRATE = CDPRegistrate.create(ID)
+            .setTooltipModifier(item -> new ItemDescription.Modifier(item, TooltipHelper.Palette.STANDARD_CREATE));
 
-    public CDPCommon(IEventBus modBus, ModContainer modContainer) {
-        this.modContainer = modContainer;
+    public CDPCommon() {
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         REGISTRATE.registerEventListeners(modBus);
         CDPFluids.register(modBus);
         CDPBlocks.register(modBus);
@@ -75,42 +58,18 @@ public class CDPCommon {
         CDPCriterions.register(modBus);
         CDPRecipes.register(modBus);
         CDPConditions.register(modBus);
-        CDPFanProcessingTypes.register(modBus);
-        CDPItemAttributes.register(modBus);
-        CDPDataMaps.register(modBus);
-        modBus.register(this);
-        modBus.register(new CDPConfig(modContainer));
+        CDPConfig.register();
+        modBus.addListener(this::setup);
     }
 
-    @SubscribeEvent
-    public void construct(final FMLConstructModEvent event) {
-        for (ModIntegration integration : ModIntegration.values()) {
-            if (integration.enabled())
-                event.enqueueWork(integration::onConstructMod);
-        }
-    }
-
-    @SubscribeEvent
-    public void setup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(CDPBlockFreezers::register);
-        for (ModIntegration integration : ModIntegration.values()) {
-            if (integration.enabled())
-                event.enqueueWork(integration::onCommonSetup);
-        }
-    }
-
-    @SubscribeEvent
-    public void addPackFinders(final AddPackFindersEvent event) {
-        var type = event.getPackType();
-        if (type == PackType.SERVER_DATA) {
-            var pack = new RuntimePackResources("runtime", modContainer, type, Position.TOP, runtimePackTitle, runtimePackDescription);
-            var registries = CompletableFuture.<HolderLookup.Provider>completedFuture(RegistryLayer.createRegistryAccess().compositeAccess());
-            pack.addDataProvider(new CDPRuntimeRecipeProvider(pack.getPackOutput(), registries));
-            event.addRepositorySource(pack);
-        }
+    private void setup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
+            CDPFanProcessingTypes.register();
+            CDPBlockFreezers.register();
+        });
     }
 
     public static ResourceLocation asResource(String path) {
-        return ResourceLocation.fromNamespaceAndPath(ID, path);
+        return new ResourceLocation(ID, path);
     }
 }

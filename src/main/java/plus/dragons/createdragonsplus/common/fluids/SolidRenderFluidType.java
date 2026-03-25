@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.material.FluidState;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import org.joml.Vector3f;
 import plus.dragons.createdragonsplus.util.CodeReference;
 

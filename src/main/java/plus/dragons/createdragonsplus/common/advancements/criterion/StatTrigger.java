@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,58 +21,56 @@ package plus.dragons.createdragonsplus.common.advancements.criterion;
 
 import com.google.common.collect.Table;
 import com.google.common.collect.Tables;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import com.mojang.serialization.JsonOps;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Set;
-import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.CriterionTrigger;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.advancements.critereon.CriterionValidator;
+import net.minecraft.advancements.critereon.AbstractCriterionTriggerInstance;
+import net.minecraft.advancements.critereon.DeserializationContext;
+import net.minecraft.advancements.critereon.EntityPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.advancements.critereon.SerializationContext;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.Stats;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.StatAwardEvent;
-import plus.dragons.createdragonsplus.common.advancements.criterion.StatTrigger.Instance;
+import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.registry.CDPCriterions;
 import plus.dragons.createdragonsplus.util.CDPCodecs;
 
-public class StatTrigger implements CriterionTrigger<Instance> {
+public class StatTrigger implements CriterionTrigger<StatTrigger.Instance> {
+    public static final ResourceLocation ID = new ResourceLocation(CDPCommon.ID, "stat");
     private final Table<PlayerAdvancements, Stat<?>, Set<Listener<Instance>>> listeners = Tables
             .newCustomTable(new IdentityHashMap<>(), IdentityHashMap::new);
 
     public StatTrigger() {
-        NeoForge.EVENT_BUS.register(this);
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public final void onStatAwardEvent(final StatAwardEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Stat<?> stat = event.getStat();
-            PlayerAdvancements advancements = player.getAdvancements();
-            var listeners = this.listeners.get(advancements, stat);
-            if (listeners == null || listeners.isEmpty())
-                return;
-            int value = event.getValue();
-            for (var listener : listeners) {
-                var trigger = listener.trigger();
-                if (trigger.bounds().matches(value)) {
-                    listener.run(advancements);
-                }
+    @Override
+    public ResourceLocation getId() {
+        return ID;
+    }
+
+    public void checkTriggers(ServerPlayer player, Stat<?> stat, int value) {
+        PlayerAdvancements advancements = player.getAdvancements();
+        var listenerSet = this.listeners.get(advancements, stat);
+        if (listenerSet == null || listenerSet.isEmpty())
+            return;
+        for (var listener : listenerSet) {
+            var trigger = listener.getTriggerInstance();
+            if (trigger.bounds.matches(value)) {
+                listener.run(advancements);
             }
         }
     }
 
     @Override
-    public final void addPlayerListener(PlayerAdvancements advancements, CriterionTrigger.Listener<Instance> listener) {
-        var stat = listener.trigger().stat;
+    public final void addPlayerListener(PlayerAdvancements advancements, Listener<Instance> listener) {
+        var stat = listener.getTriggerInstance().stat;
         var set = this.listeners.get(advancements, stat);
         if (set == null) {
             set = new HashSet<>();
@@ -81,8 +80,8 @@ public class StatTrigger implements CriterionTrigger<Instance> {
     }
 
     @Override
-    public final void removePlayerListener(PlayerAdvancements advancements, CriterionTrigger.Listener<Instance> listener) {
-        var stat = listener.trigger().stat;
+    public final void removePlayerListener(PlayerAdvancements advancements, Listener<Instance> listener) {
+        var stat = listener.getTriggerInstance().stat;
         var set = this.listeners.get(advancements, stat);
         if (set != null) {
             set.remove(listener);
@@ -97,24 +96,43 @@ public class StatTrigger implements CriterionTrigger<Instance> {
     }
 
     @Override
-    public Codec<Instance> codec() {
-        return Instance.CODEC;
+    public Instance createInstance(JsonObject json, DeserializationContext context) {
+        Stat<?> stat = CDPCodecs.STAT.parse(JsonOps.INSTANCE, json)
+                .getOrThrow(false, s -> { throw new JsonSyntaxException("Failed to parse stat: " + s); });
+        MinMaxBounds.Ints bounds = MinMaxBounds.Ints.fromJson(json.get("bounds"));
+        return new Instance(stat, bounds);
     }
 
-    public record Instance(Stat<?> stat, MinMaxBounds.Ints bounds) implements CriterionTriggerInstance {
-        public static final Codec<Instance> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                CDPCodecs.STAT.forGetter(Instance::stat),
-                MinMaxBounds.Ints.CODEC.fieldOf("bounds").forGetter(Instance::bounds)).apply(instance, Instance::new));
+    public static class Instance extends AbstractCriterionTriggerInstance {
+        final Stat<?> stat;
+        final MinMaxBounds.Ints bounds;
 
-        public static Criterion<Instance> of(Stat<?> stat, MinMaxBounds.Ints bounds) {
-            return CDPCriterions.STAT.get().createCriterion(new Instance(stat, bounds));
+        public Instance(Stat<?> stat, MinMaxBounds.Ints bounds) {
+            super(ID, EntityPredicate.Composite.ANY);
+            this.stat = stat;
+            this.bounds = bounds;
         }
 
-        public static Criterion<Instance> of(ResourceLocation stat, MinMaxBounds.Ints bounds) {
-            return CDPCriterions.STAT.get().createCriterion(new Instance(Stats.CUSTOM.get(stat), bounds));
+        public static Instance of(Stat<?> stat, MinMaxBounds.Ints bounds) {
+            return new Instance(stat, bounds);
+        }
+
+        public static Instance of(ResourceLocation stat, MinMaxBounds.Ints bounds) {
+            return new Instance(Stats.CUSTOM.get(stat), bounds);
         }
 
         @Override
-        public void validate(CriterionValidator validator) {}
+        public JsonObject serializeToJson(SerializationContext context) {
+            JsonObject json = super.serializeToJson(context);
+            CDPCodecs.STAT.encodeStart(JsonOps.INSTANCE, stat)
+                    .resultOrPartial(s -> {})
+                    .ifPresent(element -> {
+                        if (element.isJsonObject()) {
+                            element.getAsJsonObject().entrySet().forEach(entry -> json.add(entry.getKey(), entry.getValue()));
+                        }
+                    });
+            json.add("bounds", bounds.serializeToJson());
+            return json;
+        }
     }
 }

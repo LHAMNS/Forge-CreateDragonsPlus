@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -88,7 +89,7 @@ public abstract class ConcretePowderBlockMixin extends FallingBlock {
             var fluid = level.getBlockState(mutableBlockPos).getFluidState();
             if (fluid.is(CDPFluids.COMMON_TAGS.dyes)) {
                 var coloredConcrete = BuiltInRegistries.BLOCK.getOptional(
-                        ResourceLocation.withDefaultNamespace(BuiltInRegistries.FLUID.getKey(fluid.getType()).getPath().replace("_dye", "_concrete").replace("flowing_", "")));
+                        new ResourceLocation("minecraft", BuiltInRegistries.FLUID.getKey(fluid.getType()).getPath().replace("_dye", "_concrete").replace("flowing_", "")));
                 return coloredConcrete.orElse(concrete).defaultBlockState();
             }
         }

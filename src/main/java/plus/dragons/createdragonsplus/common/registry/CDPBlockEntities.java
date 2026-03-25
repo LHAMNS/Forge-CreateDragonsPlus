@@ -14,6 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  */
 
 package plus.dragons.createdragonsplus.common.registry;
@@ -22,7 +24,7 @@ import static plus.dragons.createdragonsplus.common.CDPCommon.REGISTRATE;
 
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
-import net.neoforged.bus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import plus.dragons.createdragonsplus.common.fluids.hatch.FluidHatchBlockEntity;
 
 public class CDPBlockEntities {

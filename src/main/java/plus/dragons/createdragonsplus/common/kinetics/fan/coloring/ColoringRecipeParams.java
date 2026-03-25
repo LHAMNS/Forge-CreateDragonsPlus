@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,49 +19,29 @@
 
 package plus.dragons.createdragonsplus.common.kinetics.fan.coloring;
 
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.simibubi.create.content.processing.recipe.ProcessingRecipeParams;
-import java.util.function.Function;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.DyeColor;
-import plus.dragons.createdragonsplus.util.FieldsNullabilityUnknownByDefault;
 
-@FieldsNullabilityUnknownByDefault
-public class ColoringRecipeParams extends ProcessingRecipeParams {
-    public static final MapCodec<ColoringRecipeParams> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            codec(ColoringRecipeParams::new).forGetter(Function.identity()),
-            DyeColor.CODEC.fieldOf("color").forGetter(ColoringRecipeParams::getColor)).apply(instance, ColoringRecipeParams::setColor));
-    public static final StreamCodec<RegistryFriendlyByteBuf, ColoringRecipeParams> STREAM_CODEC = streamCodec(ColoringRecipeParams::new);
+/**
+ * In Create 0.5.1.f (Forge 1.20.1), there is no separate ProcessingRecipeParams subclass system.
+ * Extra recipe data like DyeColor is stored directly on the recipe via writeAdditional/readAdditional
+ * and writeExtra/readExtra. This class is retained as a simple data holder for convenience.
+ */
+public class ColoringRecipeParams {
     protected DyeColor color;
 
-    protected ColoringRecipeParams() {
-        super();
+    public ColoringRecipeParams() {
+        this.color = DyeColor.WHITE;
     }
 
     public ColoringRecipeParams(DyeColor color) {
         this.color = color;
     }
 
-    protected DyeColor getColor() {
+    public DyeColor getColor() {
         return color;
     }
 
-    protected ColoringRecipeParams setColor(DyeColor color) {
+    public void setColor(DyeColor color) {
         this.color = color;
-        return this;
-    }
-
-    @Override
-    protected void encode(RegistryFriendlyByteBuf buffer) {
-        super.encode(buffer);
-        DyeColor.STREAM_CODEC.encode(buffer, color);
-    }
-
-    @Override
-    protected void decode(RegistryFriendlyByteBuf buffer) {
-        super.decode(buffer);
-        color = DyeColor.STREAM_CODEC.decode(buffer);
     }
 }

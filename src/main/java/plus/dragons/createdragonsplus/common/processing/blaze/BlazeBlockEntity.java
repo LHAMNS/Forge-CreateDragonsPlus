@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +19,16 @@
 
 package plus.dragons.createdragonsplus.common.processing.blaze;
 
+import com.jozufozu.flywheel.backend.instancing.InstancedRenderDispatcher;
+import com.jozufozu.flywheel.core.PartialModel;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
-import dev.engine_room.flywheel.api.visualization.VisualizationManager;
-import dev.engine_room.flywheel.lib.model.baked.PartialModel;
-import net.createmod.catnip.animation.LerpedFloat;
-import net.createmod.catnip.animation.LerpedFloat.Chaser;
-import net.createmod.catnip.math.AngleHelper;
-import net.createmod.catnip.math.VecHelper;
+import com.simibubi.create.foundation.utility.AngleHelper;
+import com.simibubi.create.foundation.utility.AnimationTickHolder;
+import com.simibubi.create.foundation.utility.VecHelper;
+import com.simibubi.create.foundation.utility.animation.LerpedFloat;
+import com.simibubi.create.foundation.utility.animation.LerpedFloat.Chaser;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -39,8 +41,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.util.CodeReference;
 
@@ -64,8 +66,7 @@ public abstract class BlazeBlockEntity extends SmartBlockEntity {
         super.tick();
         assert level != null;
         if (level.isClientSide) {
-            if (shouldTickAnimation())
-                tickAnimation();
+            tickAnimation();
             if (!isVirtual())
                 spawnParticles(getHeatLevelFromBlock());
             return;
@@ -87,12 +88,7 @@ public abstract class BlazeBlockEntity extends SmartBlockEntity {
     }
 
     @OnlyIn(Dist.CLIENT)
-    protected boolean shouldTickAnimation() {
-        return !VisualizationManager.supportsVisualization(level);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    protected void tickAnimation() {
+    public void tickAnimation() {
         boolean active = getHeatLevelFromBlock().isAtLeast(HeatLevel.FADING) && isActive();
         if (active) {
             headAngle.chase((AngleHelper.horizontalAngle(getBlockState()

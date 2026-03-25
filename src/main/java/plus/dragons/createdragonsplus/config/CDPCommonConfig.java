@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,14 +19,12 @@
 
 package plus.dragons.createdragonsplus.config;
 
-import net.createmod.catnip.config.ConfigBase;
-import net.createmod.catnip.config.ui.ConfigAnnotations.RequiresRestart;
+import com.simibubi.create.foundation.config.ConfigBase;
 
 public class CDPCommonConfig extends ConfigBase {
     public final CDPFeaturesConfig features = nested(1, CDPFeaturesConfig::new,
             Comments.features,
-            Comments.featuresOverride,
-            RequiresRestart.BOTH.asComment());
+            Comments.featuresOverride);
 
     @Override
     public String getName() {

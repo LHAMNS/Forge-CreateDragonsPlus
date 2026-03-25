@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +23,7 @@ import com.google.common.base.Predicates;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 
 public class ConfigurableFluidTank extends SmartFluidTank {
     protected Predicate<FluidStack> insertion = Predicates.alwaysTrue();

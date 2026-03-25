@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,17 +20,35 @@
 package plus.dragons.createdragonsplus.common.advancements.criterion;
 
 import com.google.common.collect.Sets;
-import com.mojang.serialization.Codec;
-import java.util.*;
+import com.google.gson.JsonObject;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
 import net.minecraft.advancements.CriterionTrigger;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.advancements.critereon.CriterionValidator;
+import net.minecraft.advancements.critereon.AbstractCriterionTriggerInstance;
+import net.minecraft.advancements.critereon.DeserializationContext;
+import net.minecraft.advancements.critereon.EntityPredicate;
+import net.minecraft.advancements.critereon.SerializationContext;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ServerPlayer;
 
-public class BuiltinTrigger implements CriterionTrigger<BuiltinTrigger>, CriterionTriggerInstance {
-    private final Map<PlayerAdvancements, Set<Listener<BuiltinTrigger>>> listeners = new IdentityHashMap<>();
-    private final Codec<BuiltinTrigger> codec = Codec.unit(this);
+public class BuiltinTrigger implements CriterionTrigger<BuiltinTrigger.Instance> {
+    private final Map<PlayerAdvancements, Set<Listener<Instance>>> listeners = new IdentityHashMap<>();
+    private final ResourceLocation id;
+
+    public BuiltinTrigger(ResourceLocation id) {
+        this.id = id;
+    }
+
+    @Override
+    public ResourceLocation getId() {
+        return id;
+    }
+
+    public Instance instance() {
+        return new Instance(id);
+    }
 
     public void trigger(ServerPlayer player) {
         var advancements = player.getAdvancements();
@@ -39,13 +58,13 @@ public class BuiltinTrigger implements CriterionTrigger<BuiltinTrigger>, Criteri
     }
 
     @Override
-    public final void addPlayerListener(PlayerAdvancements playerAdvancements, CriterionTrigger.Listener<BuiltinTrigger> listener) {
+    public final void addPlayerListener(PlayerAdvancements playerAdvancements, Listener<Instance> listener) {
         this.listeners.computeIfAbsent(playerAdvancements, it -> Sets.newHashSet()).add(listener);
     }
 
     @Override
-    public final void removePlayerListener(PlayerAdvancements playerAdvancements, CriterionTrigger.Listener<BuiltinTrigger> listener) {
-        Set<CriterionTrigger.Listener<BuiltinTrigger>> set = this.listeners.get(playerAdvancements);
+    public final void removePlayerListener(PlayerAdvancements playerAdvancements, Listener<Instance> listener) {
+        Set<Listener<Instance>> set = this.listeners.get(playerAdvancements);
         if (set != null) {
             set.remove(listener);
             if (set.isEmpty()) {
@@ -60,10 +79,18 @@ public class BuiltinTrigger implements CriterionTrigger<BuiltinTrigger>, Criteri
     }
 
     @Override
-    public Codec<BuiltinTrigger> codec() {
-        return this.codec;
+    public Instance createInstance(JsonObject json, DeserializationContext context) {
+        return new Instance(id);
     }
 
-    @Override
-    public void validate(CriterionValidator validator) {}
+    public static class Instance extends AbstractCriterionTriggerInstance {
+        public Instance(ResourceLocation criterion) {
+            super(criterion, EntityPredicate.Composite.ANY);
+        }
+
+        @Override
+        public JsonObject serializeToJson(SerializationContext context) {
+            return new JsonObject();
+        }
+    }
 }

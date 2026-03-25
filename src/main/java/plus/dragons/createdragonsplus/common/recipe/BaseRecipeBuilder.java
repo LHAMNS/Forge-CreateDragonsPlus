@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,23 +23,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.common.conditions.ICondition;
-import net.neoforged.neoforge.common.conditions.ItemExistsCondition;
-import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
-import net.neoforged.neoforge.common.conditions.NotCondition;
-import net.neoforged.neoforge.common.conditions.OrCondition;
-import net.neoforged.neoforge.common.conditions.TagEmptyCondition;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.ModLoadedCondition;
+import net.minecraftforge.common.crafting.conditions.NotCondition;
+import net.minecraftforge.common.crafting.conditions.TagEmptyCondition;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class BaseRecipeBuilder<R extends Recipe<?>, B extends BaseRecipeBuilder<R, ?>> implements Consumer<RecipeOutput> {
+public abstract class BaseRecipeBuilder<R extends Recipe<?>, B extends BaseRecipeBuilder<R, ?>> {
     protected final @Nullable String directory;
     protected final List<ICondition> conditions = new ArrayList<>();
     protected @Nullable ResourceLocation id;
@@ -49,11 +46,7 @@ public abstract class BaseRecipeBuilder<R extends Recipe<?>, B extends BaseRecip
 
     protected abstract B builder();
 
-    public abstract RecipeHolder<R> build();
-
-    public @Nullable AdvancementHolder buildAdvancement() {
-        return null;
-    }
+    public abstract R build();
 
     public @Nullable String getDirectory() {
         return directory;
@@ -61,16 +54,6 @@ public abstract class BaseRecipeBuilder<R extends Recipe<?>, B extends BaseRecip
 
     public @Nullable ResourceLocation getId() {
         return id;
-    }
-
-    @Override
-    public final void accept(RecipeOutput output) {
-        var holder = this.build();
-        var id = this.directory == null
-                ? holder.id()
-                : holder.id().withPrefix(this.directory + "/");
-        var conditions = this.conditions.toArray(ICondition[]::new);
-        output.accept(id, holder.value(), this.buildAdvancement(), conditions);
     }
 
     public B withId(ResourceLocation id) {
@@ -93,11 +76,6 @@ public abstract class BaseRecipeBuilder<R extends Recipe<?>, B extends BaseRecip
         return builder();
     }
 
-    public final B withAnyCondition(ICondition... conditions) {
-        this.conditions.add(new OrCondition(List.of(conditions)));
-        return builder();
-    }
-
     public final B withMod(String mod) {
         this.withCondition(new ModLoadedCondition(mod));
         return builder();
@@ -108,43 +86,13 @@ public abstract class BaseRecipeBuilder<R extends Recipe<?>, B extends BaseRecip
         return builder();
     }
 
-    public final B withItem(ResourceLocation location) {
-        this.withCondition(new ItemExistsCondition(location));
-        return builder();
-    }
-
-    public final B withItem(DeferredHolder<Item, ?> item) {
-        this.withCondition(new ItemExistsCondition(item.getId()));
-        return builder();
-    }
-
-    public final B withoutItem(ResourceLocation location) {
-        this.withoutCondition(new ItemExistsCondition(location));
-        return builder();
-    }
-
-    public final B withoutItem(DeferredHolder<Item, ?> item) {
-        this.withoutCondition(new ItemExistsCondition(item.getId()));
-        return builder();
-    }
-
-    public final B withTag(ResourceLocation location) {
-        this.withoutCondition(new TagEmptyCondition(location));
-        return builder();
-    }
-
     public final B withTag(TagKey<Item> tag) {
-        this.withoutCondition(new TagEmptyCondition(tag));
-        return builder();
-    }
-
-    public final B withoutTag(ResourceLocation location) {
-        this.withCondition(new TagEmptyCondition(location));
+        this.withoutCondition(new TagEmptyCondition(tag.location()));
         return builder();
     }
 
     public final B withoutTag(TagKey<Item> tag) {
-        this.withCondition(new TagEmptyCondition(tag));
+        this.withCondition(new TagEmptyCondition(tag.location()));
         return builder();
     }
 }

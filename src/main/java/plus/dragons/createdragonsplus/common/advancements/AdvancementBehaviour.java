@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +31,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
@@ -42,7 +42,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayer;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import plus.dragons.createdragonsplus.common.CDPCommon;
@@ -52,11 +52,11 @@ import plus.dragons.createdragonsplus.util.CDPCodecs;
 import plus.dragons.createdragonsplus.util.ErrorMessages;
 
 /**
- * {@link BlockEntityBehaviour} for awarding owner player advancements through stats and builtin triggers. <br>
+ * {@link BlockEntityBehaviour} for awarding owner player advancements through stats and builtin triggers.
  * The owner player should be set using {@link #setPlacedBy(Level, BlockPos, LivingEntity)} in
- * {@link Block#setPlacedBy(Level, BlockPos, BlockState, LivingEntity, ItemStack)}. <br>
- * Stats will be stored if owner player is not available, and will add to next success award. <br>
- * 
+ * {@link Block#setPlacedBy(Level, BlockPos, BlockState, LivingEntity, ItemStack)}.
+ * Stats will be stored if owner player is not available, and will add to next success award.
+ *
  * @see BuiltinTrigger
  * @see StatTrigger
  */
@@ -67,7 +67,7 @@ public class AdvancementBehaviour extends BlockEntityBehaviour {
     protected static final String STATS_COUNTER_KEY = "StatsCounter";
     protected static final Codec<Object2IntMap<Stat<?>>> STATS_COUNTER_CODEC = RecordCodecBuilder
             .<Pair<Stat<?>, Integer>>create(instance -> instance.group(
-                    CDPCodecs.STAT.forGetter(Pair::getFirst),
+                    CDPCodecs.STAT.fieldOf("stat").forGetter(Pair::getFirst),
                     Codec.INT.fieldOf("count").forGetter(Pair::getSecond)).apply(instance, Pair::of))
             .listOf().xmap(
                     list -> {
@@ -145,7 +145,7 @@ public class AdvancementBehaviour extends BlockEntityBehaviour {
     }
 
     @Override
-    public void read(CompoundTag nbt, Provider registries, boolean clientPacket) {
+    public void read(CompoundTag nbt, boolean clientPacket) {
         if (clientPacket)
             return;
 
@@ -165,7 +165,7 @@ public class AdvancementBehaviour extends BlockEntityBehaviour {
     }
 
     @Override
-    public void write(CompoundTag nbt, Provider registries, boolean clientPacket) {
+    public void write(CompoundTag nbt, boolean clientPacket) {
         if (clientPacket)
             return;
 

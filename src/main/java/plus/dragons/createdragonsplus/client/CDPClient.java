@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,13 +19,11 @@
 
 package plus.dragons.createdragonsplus.client;
 
-import net.createmod.ponder.foundation.PonderIndex;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import plus.dragons.createdragonsplus.client.model.CDPPartialModels;
-import plus.dragons.createdragonsplus.client.ponder.CDPPonderPlugin;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import plus.dragons.createdragonsplus.client.ponder.CDPPonderScenes;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.integration.ModIntegration;
 
@@ -36,8 +35,7 @@ public class CDPClient {
 
     @SubscribeEvent
     public void setup(final FMLClientSetupEvent event) {
-        PonderIndex.addPlugin(new CDPPonderPlugin());
-        CDPPartialModels.register();
+        CDPPonderScenes.register();
         for (ModIntegration integration : ModIntegration.values()) {
             if (integration.enabled())
                 event.enqueueWork(integration::onClientSetup);

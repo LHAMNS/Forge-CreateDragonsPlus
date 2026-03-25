@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +24,12 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
-import plus.dragons.createdragonsplus.common.registry.CDPCapabilities;
 
 /**
  * Base implementation of {@link BehaviourProvider} through a wrapping {@link SmartBlockEntity}.
  * <p>
- * Register to {@link CDPCapabilities#BEHAVIOUR_PROVIDER} to supply {@link BlockEntityBehaviour} from non-{@link SmartBlockEntity}.
- * 
+ * Supply {@link BlockEntityBehaviour} from non-{@link SmartBlockEntity}.
+ *
  * @param <T> the type of the owning {@link BlockEntity}
  */
 public abstract class SmartBlockEntityBehaviourProvider<T extends BlockEntity> extends SmartBlockEntity implements BehaviourProvider {

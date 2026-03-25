@@ -14,21 +14,20 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  */
 
 package plus.dragons.createdragonsplus.common.registry;
 
 import com.google.common.collect.ImmutableMap;
-import com.simibubi.create.api.registry.CreateRegistries;
+import com.simibubi.create.content.kinetics.fan.processing.AllFanProcessingTypes;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.Util;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.fluids.dye.DyeColors;
 import plus.dragons.createdragonsplus.common.kinetics.fan.coloring.ColoringFanProcessingType;
@@ -37,26 +36,47 @@ import plus.dragons.createdragonsplus.common.kinetics.fan.freezing.FreezingFanPr
 import plus.dragons.createdragonsplus.common.kinetics.fan.sanding.SandingFanProcessingType;
 
 public class CDPFanProcessingTypes {
-    private static final DeferredRegister<FanProcessingType> TYPES = DeferredRegister
-            .create(CreateRegistries.FAN_PROCESSING_TYPE, CDPCommon.ID);
     public static final Map<DyeColor, Supplier<ColoringFanProcessingType>> COLORING = Util.make(() -> {
         var builder = ImmutableMap.<DyeColor, Supplier<ColoringFanProcessingType>>builder();
         for (var color : DyeColors.ALL) {
-            // In case there are modded DyeColor
-            var name = "coloring_" + ResourceLocation.parse(color.getName()).getPath();
-            var type = TYPES.register(name, () -> new ColoringFanProcessingType(color));
-            builder.put(color, type);
+            var type = new ColoringFanProcessingType(color);
+            builder.put(color, () -> type);
         }
         return builder.build();
     });
-    public static final DeferredHolder<FanProcessingType, FreezingFanProcessingType> FREEZING = TYPES
-            .register("freezing", FreezingFanProcessingType::new);
-    public static final DeferredHolder<FanProcessingType, SandingFanProcessingType> SANDING = TYPES
-            .register("sanding", SandingFanProcessingType::new);
-    public static final DeferredHolder<FanProcessingType, EndingFanProcessingType> ENDING = TYPES
-            .register("ending", EndingFanProcessingType::new);
+    public static final Supplier<FreezingFanProcessingType> FREEZING = createLazy(FreezingFanProcessingType::new);
+    public static final Supplier<SandingFanProcessingType> SANDING = createLazy(SandingFanProcessingType::new);
+    public static final Supplier<EndingFanProcessingType> ENDING = createLazy(EndingFanProcessingType::new);
 
-    public static void register(IEventBus modBus) {
-        TYPES.register(modBus);
+    private static <T extends FanProcessingType> Supplier<T> createLazy(Supplier<T> factory) {
+        return new Supplier<>() {
+            private T instance;
+
+            @Override
+            public T get() {
+                if (instance == null) {
+                    instance = factory.get();
+                }
+                return instance;
+            }
+        };
+    }
+
+    public static void register() {
+        for (var entry : COLORING.entrySet()) {
+            DyeColor color = entry.getKey();
+            AllFanProcessingTypes.register(
+                    new ResourceLocation(CDPCommon.ID, "coloring_" + color.getSerializedName()),
+                    entry.getValue().get());
+        }
+        AllFanProcessingTypes.register(
+                new ResourceLocation(CDPCommon.ID, "freezing"),
+                FREEZING.get());
+        AllFanProcessingTypes.register(
+                new ResourceLocation(CDPCommon.ID, "sanding"),
+                SANDING.get());
+        AllFanProcessingTypes.register(
+                new ResourceLocation(CDPCommon.ID, "ending"),
+                ENDING.get());
     }
 }

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +20,7 @@
 package plus.dragons.createdragonsplus.common.fluids.dye;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.capability.wrappers.FluidBucketWrapper;
+import net.minecraftforge.fluids.capability.wrappers.FluidBucketWrapper;
 
 public class DyeBucketFluidHandler extends FluidBucketWrapper {
     public DyeBucketFluidHandler(ItemStack container) {

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +19,16 @@
 
 package plus.dragons.createdragonsplus.config;
 
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.MapCodec;
+import com.google.gson.JsonObject;
+import com.simibubi.create.foundation.config.ConfigBase;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import net.createmod.catnip.config.ConfigBase;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.common.conditions.ICondition;
+import net.minecraft.util.GsonHelper;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
+import net.minecraftforge.fml.ModList;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -64,17 +66,13 @@ public class FeaturesConfig extends ConfigBase {
     }
 
     public class ConfigFeature extends ConfigBool implements ICondition {
-        public static final MapCodec<ConfigFeature> CODEC = ResourceLocation.CODEC.comapFlatMap(
-                id -> FEATURES.containsKey(id)
-                        ? DataResult.success(FEATURES.get(id))
-                        : DataResult.error(() -> "No config features with id [" + id + "] exists"),
-                ConfigFeature::getId).fieldOf("feature");
+        public static final ResourceLocation CONDITION_ID = new ResourceLocation("create_dragons_plus", "config_feature");
         private final ResourceLocation id;
         private final @Nullable Boolean override;
 
         public ConfigFeature(String name, boolean def, String... comment) {
             super(name, def, comment);
-            this.id = ResourceLocation.fromNamespaceAndPath(modid, name);
+            this.id = new ResourceLocation(modid, name);
             this.override = getFeatureOverride(this.id);
             if (FEATURES.containsKey(id))
                 throw new IllegalStateException("Config features with id [" + id + "] already registered");
@@ -86,7 +84,7 @@ public class FeaturesConfig extends ConfigBase {
         }
 
         public ConfigFeature addAlias(String name) {
-            FEATURES.put(ResourceLocation.fromNamespaceAndPath(modid, name), this);
+            FEATURES.put(new ResourceLocation(modid, name), this);
             return this;
         }
 
@@ -96,18 +94,42 @@ public class FeaturesConfig extends ConfigBase {
         }
 
         @Override
-        public boolean test(IContext context) {
-            return get();
+        public ResourceLocation getID() {
+            return CONDITION_ID;
         }
 
         @Override
-        public MapCodec<? extends ICondition> codec() {
-            return CODEC;
+        public boolean test(IContext context) {
+            return get();
         }
     }
 
     @Override
     public String getName() {
         return "features";
+    }
+
+    public static class ConfigFeatureConditionSerializer implements IConditionSerializer<ConfigFeature> {
+        public static final ConfigFeatureConditionSerializer INSTANCE = new ConfigFeatureConditionSerializer();
+
+        @Override
+        public void write(JsonObject json, ConfigFeature value) {
+            json.addProperty("feature", value.getId().toString());
+        }
+
+        @Override
+        public ConfigFeature read(JsonObject json) {
+            ResourceLocation featureId = new ResourceLocation(GsonHelper.getAsString(json, "feature"));
+            ConfigFeature feature = FEATURES.get(featureId);
+            if (feature == null) {
+                throw new IllegalStateException("Unknown config feature: " + featureId);
+            }
+            return feature;
+        }
+
+        @Override
+        public ResourceLocation getID() {
+            return ConfigFeature.CONDITION_ID;
+        }
     }
 }

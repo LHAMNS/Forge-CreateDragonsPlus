@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,7 +28,6 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.ItemLike;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.recipe.BaseRecipeBuilder;
-import plus.dragons.createdragonsplus.data.recipe.integration.IntegrationResultRecipe;
 
 public abstract class BaseSingleItemRecipeBuilder<R extends Recipe<?>, B extends BaseSingleItemRecipeBuilder<R, B>> extends BaseRecipeBuilder<R, B> {
     protected Ingredient ingredient = Ingredient.EMPTY;
@@ -63,9 +63,5 @@ public abstract class BaseSingleItemRecipeBuilder<R extends Recipe<?>, B extends
     public B output(ItemStack stack) {
         this.result = stack;
         return builder();
-    }
-
-    public IntegrationResultRecipe.Builder output(ResourceLocation result) {
-        return new IntegrationResultRecipe.Builder(this, this.result, result);
     }
 }

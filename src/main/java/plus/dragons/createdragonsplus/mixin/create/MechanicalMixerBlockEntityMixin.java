@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,9 +28,10 @@ import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.capabilities.Capabilities.FluidHandler;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -47,22 +49,24 @@ public abstract class MechanicalMixerBlockEntityMixin extends BasinOperatingBloc
     private void getMatchingRecipes$checkDragonBreathFluid(CallbackInfoReturnable<List<Recipe<?>>> cir, @Local BasinBlockEntity basin, @Local List<Recipe<?>> matchingRecipes) {
         assert level != null;
         if (CDPConfig.features().generateAutomaticBrewingRecipeForDragonBreathFluid.get()) {
-            var tanks = level.getCapability(FluidHandler.BLOCK, basin.getBlockPos(), null);
-            if (tanks == null)
+            BlockEntity basinBE = level.getBlockEntity(basin.getBlockPos());
+            if (basinBE == null)
                 return;
-            for (int i = 0; i < tanks.getTanks(); i++) {
-                var fluid = tanks.getFluidInTank(i);
-                if (fluid.is(CDPFluids.COMMON_TAGS.dragonBreath)) {
-                    var recipes = PotionMixingRecipes.sortRecipesByItem(level).get(Items.DRAGON_BREATH);
-                    if (recipes == null)
+            basinBE.getCapability(ForgeCapabilities.FLUID_HANDLER).ifPresent(tanks -> {
+                for (int i = 0; i < tanks.getTanks(); i++) {
+                    var fluid = tanks.getFluidInTank(i);
+                    if (fluid.getFluid().is(CDPFluids.COMMON_TAGS.dragonBreath)) {
+                        var recipes = PotionMixingRecipes.sortRecipesByItem(level).get(Items.DRAGON_BREATH);
+                        if (recipes == null)
+                            return;
+                        for (var recipe : recipes) {
+                            if (matchBasinRecipe(recipe))
+                                matchingRecipes.add(recipe);
+                        }
                         return;
-                    for (var recipe : recipes) {
-                        if (matchBasinRecipe(recipe))
-                            matchingRecipes.add(recipe);
                     }
-                    break;
                 }
-            }
+            });
         }
     }
 }

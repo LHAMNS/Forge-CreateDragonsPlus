@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,14 +19,13 @@
 
 package plus.dragons.createdragonsplus.common.fluids.pipe;
 
-import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.content.fluids.OpenEndedPipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.ApiStatus.Internal;
 
-public interface ConsumingOpenPipeEffectHandler extends OpenPipeEffectHandler {
+public interface ConsumingOpenPipeEffectHandler extends OpenEndedPipe.IEffectHandler {
     int consume(Level level, AABB area, FluidStack fluid);
 
     @Internal
@@ -48,6 +48,8 @@ public interface ConsumingOpenPipeEffectHandler extends OpenPipeEffectHandler {
                             "exceeding contained effect amount: %s"
                                     .formatted(contained));
         }
-        return fluid.copyWithAmount(contained - consumed);
+        FluidStack remainder = fluid.copy();
+        remainder.setAmount(contained - consumed);
+        return remainder;
     }
 }

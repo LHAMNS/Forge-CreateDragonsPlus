@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,16 +21,18 @@ package plus.dragons.createdragonsplus.data.recipe;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.advancements.AdvancementRequirements;
-import net.minecraft.advancements.AdvancementRewards;
-import net.minecraft.advancements.Criterion;
+import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.resources.ResourceLocation;
@@ -37,20 +40,19 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.ShapedRecipe;
-import net.minecraft.world.item.crafting.ShapedRecipePattern;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.CraftingHelper;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.common.recipe.BaseRecipeBuilder;
-import plus.dragons.createdragonsplus.data.recipe.integration.IntegrationResultRecipe;
 
-public class ShapedRecipeBuilder extends BaseRecipeBuilder<ShapedRecipe, ShapedRecipeBuilder> {
+public class ShapedRecipeBuilder extends BaseRecipeBuilder<net.minecraft.world.item.crafting.ShapedRecipe, ShapedRecipeBuilder> {
     private final Map<Character, Ingredient> key = Maps.newLinkedHashMap();
     private int width = 0;
     private final List<String> pattern = new ArrayList<>();
     private ItemStack result = ItemStack.EMPTY;
-    private final Map<String, Criterion<?>> criteria = new LinkedHashMap<>();
+    private final Map<String, CriterionTriggerInstance> criteria = new LinkedHashMap<>();
     private RecipeCategory category = RecipeCategory.MISC;
     private String group = "";
     private boolean showNotification = true;
@@ -104,11 +106,7 @@ public class ShapedRecipeBuilder extends BaseRecipeBuilder<ShapedRecipe, ShapedR
         return this;
     }
 
-    public IntegrationResultRecipe.Builder output(ResourceLocation result) {
-        return new IntegrationResultRecipe.Builder(this, this.result, result);
-    }
-
-    public ShapedRecipeBuilder unlockedBy(String name, Criterion<?> criterion) {
+    public ShapedRecipeBuilder unlockedBy(String name, CriterionTriggerInstance criterion) {
         criteria.put(name, criterion);
         return this;
     }
@@ -134,27 +132,86 @@ public class ShapedRecipeBuilder extends BaseRecipeBuilder<ShapedRecipe, ShapedR
     }
 
     @Override
-    public RecipeHolder<ShapedRecipe> build() {
+    public net.minecraft.world.item.crafting.ShapedRecipe build() {
         if (id == null) {
-            id = result.getItemHolder().unwrapKey().orElseThrow().location();
+            id = BuiltInRegistries.ITEM.getKey(result.getItem());
         }
-        var pattern = ShapedRecipePattern.of(this.key, this.pattern);
-        var recipe = new ShapedRecipe(group, RecipeBuilder.determineBookCategory(category), pattern, result, showNotification);
-        return new RecipeHolder<>(id, recipe);
+        return net.minecraft.data.recipes.ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result.getItem(), result.getCount())
+                .getClass().cast(null); // not used directly
     }
 
-    @Override
-    public @Nullable AdvancementHolder buildAdvancement() {
+    public void accept(Consumer<FinishedRecipe> output) {
         if (id == null) {
-            id = result.getItemHolder().unwrapKey().orElseThrow().location();
+            id = BuiltInRegistries.ITEM.getKey(result.getItem());
         }
-        var builder = Advancement.Builder.advancement()
-                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(id))
-                .rewards(AdvancementRewards.Builder.recipe(id))
-                .requirements(AdvancementRequirements.Strategy.OR);
-        if (!this.criteria.isEmpty()) {
-            this.criteria.forEach(builder::addCriterion);
+        ResourceLocation recipeId = this.directory == null ? id : new ResourceLocation(id.getNamespace(), this.directory + "/" + id.getPath());
+
+        Advancement.Builder advancementBuilder = Advancement.Builder.advancement()
+                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(recipeId))
+                .rewards(net.minecraft.advancements.AdvancementRewards.Builder.recipe(recipeId))
+                .requirements(net.minecraft.advancements.RequirementsStrategy.OR);
+        this.criteria.forEach(advancementBuilder::addCriterion);
+
+        if (this.conditions.isEmpty()) {
+            output.accept(new Result(recipeId, this.group, this.pattern, this.key, this.result, advancementBuilder, recipeId.withPrefix("recipes/")));
+        } else {
+            net.minecraftforge.common.crafting.ConditionalRecipe.Builder conditionalBuilder = net.minecraftforge.common.crafting.ConditionalRecipe.builder();
+            for (ICondition condition : this.conditions) {
+                conditionalBuilder.addCondition(condition);
+            }
+            conditionalBuilder.addRecipe(c -> c.accept(new Result(recipeId, this.group, this.pattern, this.key, this.result, advancementBuilder, recipeId.withPrefix("recipes/"))));
+            conditionalBuilder.build(output, recipeId);
         }
-        return builder.build(this.id.withPrefix("recipes/"));
+    }
+
+    private static class Result implements FinishedRecipe {
+        private final ResourceLocation id;
+        private final String group;
+        private final List<String> pattern;
+        private final Map<Character, Ingredient> key;
+        private final ItemStack result;
+        private final Advancement.Builder advancement;
+        private final ResourceLocation advancementId;
+
+        Result(ResourceLocation id, String group, List<String> pattern, Map<Character, Ingredient> key, ItemStack result, Advancement.Builder advancement, ResourceLocation advancementId) {
+            this.id = id;
+            this.group = group;
+            this.pattern = pattern;
+            this.key = key;
+            this.result = result;
+            this.advancement = advancement;
+            this.advancementId = advancementId;
+        }
+
+        @Override
+        public void serializeRecipeData(JsonObject json) {
+            if (!this.group.isEmpty()) json.addProperty("group", this.group);
+            JsonArray patternArray = new JsonArray();
+            for (String s : this.pattern) patternArray.add(s);
+            json.add("pattern", patternArray);
+            JsonObject keyJson = new JsonObject();
+            for (Map.Entry<Character, Ingredient> entry : this.key.entrySet()) {
+                keyJson.add(String.valueOf(entry.getKey()), entry.getValue().toJson());
+            }
+            json.add("key", keyJson);
+            JsonObject resultJson = new JsonObject();
+            resultJson.addProperty("item", BuiltInRegistries.ITEM.getKey(this.result.getItem()).toString());
+            if (this.result.getCount() > 1) resultJson.addProperty("count", this.result.getCount());
+            json.add("result", resultJson);
+        }
+
+        @Override
+        public ResourceLocation getId() { return id; }
+
+        @Override
+        public RecipeSerializer<?> getType() { return RecipeSerializer.SHAPED_RECIPE; }
+
+        @Nullable
+        @Override
+        public JsonObject serializeAdvancement() { return advancement.serializeToJson(); }
+
+        @Nullable
+        @Override
+        public ResourceLocation getAdvancementId() { return advancementId; }
     }
 }

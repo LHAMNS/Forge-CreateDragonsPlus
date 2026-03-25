@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,17 +31,18 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import plus.dragons.createdragonsplus.common.registry.CDPCapabilities;
+import plus.dragons.createdragonsplus.common.behaviours.BehaviourProvider;
 
 @Mixin(BlockEntityBehaviour.class)
 public class BlockEntityBehaviourMixin {
     @Inject(method = "get(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lcom/simibubi/create/foundation/blockEntity/behaviour/BehaviourType;)Lcom/simibubi/create/foundation/blockEntity/behaviour/BlockEntityBehaviour;", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/foundation/blockEntity/behaviour/BlockEntityBehaviour;get(Lnet/minecraft/world/level/block/entity/BlockEntity;Lcom/simibubi/create/foundation/blockEntity/behaviour/BehaviourType;)Lcom/simibubi/create/foundation/blockEntity/behaviour/BlockEntityBehaviour;"), cancellable = true)
     private static <T extends BlockEntityBehaviour> void get$getSmartBlockEntityFromWrapper(BlockGetter blockGetter, BlockPos pos, BehaviourType<T> type, CallbackInfoReturnable<T> cir, @Local BlockEntity blockEntity) {
         if (!(blockEntity instanceof SmartBlockEntity) && blockGetter instanceof Level level) {
-            var state = level.getBlockState(pos);
-            var provider = level.getCapability(CDPCapabilities.BEHAVIOUR_PROVIDER, pos, state, blockEntity);
-            if (provider != null)
-                cir.setReturnValue(provider.getBehaviour(type));
+            if (blockEntity instanceof BehaviourProvider provider) {
+                T behaviour = provider.getBehaviour(type);
+                if (behaviour != null)
+                    cir.setReturnValue(behaviour);
+            }
         }
     }
 }

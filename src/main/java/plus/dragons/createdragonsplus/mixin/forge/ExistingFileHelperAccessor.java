@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,16 +17,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package plus.dragons.createdragonsplus.mixin.neoforge;
+package plus.dragons.createdragonsplus.mixin.forge;
 
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.minecraft.server.packs.resources.MultiPackResourceManager;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Invoker;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ExistingFileHelper.class)
 public interface ExistingFileHelperAccessor {
-    @Invoker("getManager")
-    ResourceManager invokeGetManager(PackType type);
+    @Accessor("clientResources")
+    MultiPackResourceManager getClientResources();
+
+    @Accessor("serverResources")
+    MultiPackResourceManager getServerResources();
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,20 +19,19 @@
 
 package plus.dragons.createdragonsplus.client.model;
 
-import com.simibubi.create.AllPartialModels;
-import com.simibubi.create.Create;
-import dev.engine_room.flywheel.lib.model.baked.PartialModel;
-import net.minecraft.resources.ResourceLocation;
-import plus.dragons.createdragonsplus.common.registry.CDPItems;
-
+/**
+ * Partial models registration placeholder.
+ * <p>
+ * In NeoForge 1.21.1 with Create 6.0.x, this class registered package partial models
+ * via {@code AllPartialModels.PACKAGES} and {@code AllPartialModels.PACKAGE_RIGGING}.
+ * The packages system does not exist in Create 0.5.1.f for Forge 1.20.1,
+ * so this class is intentionally left empty.
+ * </p>
+ */
 public class CDPPartialModels {
     public static void register() {
-        registerRarePackageModel(CDPItems.RARE_BLAZE_PACKAGE.getId(), 12, 10);
-        registerRarePackageModel(CDPItems.RARE_MARBLE_GATE_PACKAGE.getId(), 12, 10);
-    }
-
-    public static void registerRarePackageModel(ResourceLocation id, int width, int height) {
-        AllPartialModels.PACKAGES.put(id, PartialModel.of(id.withPrefix("item/")));
-        AllPartialModels.PACKAGE_RIGGING.put(id, PartialModel.of(Create.asResource("item/package/rigging_" + width + "x" + height)));
+        // No-op: The Create 6.0.x package system (AllPartialModels.PACKAGES,
+        // AllPartialModels.PACKAGE_RIGGING) does not exist in Create 0.5.1.f.
+        // Package-related partial models are not applicable in this version.
     }
 }
