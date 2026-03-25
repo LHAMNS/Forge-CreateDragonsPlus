@@ -57,16 +57,14 @@ public class CDPLang {
     }
 
     public static LangBuilder description(Holder<?> holder, Object... args) {
-        var key = holder.getKey();
-        if (key == null)
-            throw new IllegalArgumentException("Can not build description for unregistered object: " + holder);
+        var key = holder.unwrapKey()
+                .orElseThrow(() -> new IllegalArgumentException("Can not build description for unregistered object: " + holder));
         return description(key.registry().getPath(), key.location(), args);
     }
 
     public static LangBuilder description(Holder<?> holder, String suffix, Object... args) {
-        var key = holder.getKey();
-        if (key == null)
-            throw new IllegalArgumentException("Can not build description for unregistered object: " + holder);
+        var key = holder.unwrapKey()
+                .orElseThrow(() -> new IllegalArgumentException("Can not build description for unregistered object: " + holder));
         return description(key.registry().getPath(), key.location(), suffix, args);
     }
 
@@ -79,6 +77,6 @@ public class CDPLang {
     }
 
     public static LangBuilder fluid(FluidStack stack) {
-        return builder().add(stack.getHoverName().copy());
+        return builder().add(stack.getDisplayName().copy());
     }
 }

@@ -56,7 +56,8 @@ public class FanEndingCategory extends ProcessingViaFanCategory<EndingRecipe> {
         var icon = new DoubleItemIcon(AllItems.PROPELLER::asStack, () -> new ItemStack(Items.DRAGON_BREATH));
         var catalyst = AllBlocks.ENCASED_FAN.asStack();
         catalyst.setHoverName(CDPLang.description("recipe", id, "fan").component().copy().withStyle(style -> style.withItalic(false)));
-        var info = new Info<>(FanEndingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
+        var recipeType = new mezz.jei.api.recipe.RecipeType<>(id, EndingRecipe.class);
+        var info = new Info<>(recipeType, title, background, icon, FanEndingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
         return new FanEndingCategory(info);
     }
 

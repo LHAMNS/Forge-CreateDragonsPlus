@@ -58,7 +58,7 @@ public class CDPLoots {
 
         private static void addBlazeUpgradeSmithingTemplate(LootTable table, int totalWeight) {
             var pool = LootPool.lootPool()
-                    .name(CDPItems.BLAZE_UPGRADE_SMITHING_TEMPLATE.getRegisteredName())
+                    .name(CDPItems.BLAZE_UPGRADE_SMITHING_TEMPLATE.getId().toString())
                     .setRolls(ConstantValue.exactly(1.0F))
                     .add(LootItem.lootTableItem(CDPItems.BLAZE_UPGRADE_SMITHING_TEMPLATE).setWeight(1));
             if (totalWeight > 1) {

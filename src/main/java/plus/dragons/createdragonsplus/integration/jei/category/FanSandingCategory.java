@@ -66,7 +66,8 @@ public class FanSandingCategory extends ProcessingViaFanCategory<SandingRecipe> 
         var icon = new Icon();
         var catalyst = AllBlocks.ENCASED_FAN.asStack();
         catalyst.setHoverName(CDPLang.description("recipe", id, "fan").component().copy().withStyle(style -> style.withItalic(false)));
-        var info = new Info<>(FanSandingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
+        var recipeType = new mezz.jei.api.recipe.RecipeType<>(id, SandingRecipe.class);
+        var info = new Info<>(recipeType, title, background, icon, FanSandingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
         return new FanSandingCategory(info);
     }
 
@@ -96,11 +97,11 @@ public class FanSandingCategory extends ProcessingViaFanCategory<SandingRecipe> 
     private static List<SandingRecipe> getAllRecipes() {
         var manager = CDPJeiPlugin.getRecipeManager();
         var recipes = new ArrayList<>(manager.getAllRecipesFor(CDPRecipes.SANDING.getType()));
-        manager.getAllRecipesFor(AllRecipeTypes.SANDPAPER_POLISHING.getType())
-                .stream()
-                .filter(recipe -> recipe instanceof SandPaperPolishingRecipe)
-                .map(recipe -> SandingRecipe.convertSandPaperPolishing((SandPaperPolishingRecipe) recipe))
-                .forEach(recipes::add);
+        @SuppressWarnings("unchecked")
+        var polishingRecipes = (java.util.List<SandPaperPolishingRecipe>) (java.util.List<?>) manager.getAllRecipesFor(AllRecipeTypes.SANDPAPER_POLISHING.getType());
+        for (var spp : polishingRecipes) {
+            recipes.add(SandingRecipe.convertSandPaperPolishing(spp));
+        }
         return recipes;
     }
 

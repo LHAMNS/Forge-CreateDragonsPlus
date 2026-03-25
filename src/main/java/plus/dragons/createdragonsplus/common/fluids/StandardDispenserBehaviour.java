@@ -44,9 +44,10 @@ public class StandardDispenserBehaviour extends DefaultDispenseItemBehavior {
                 return result;
             } else {
                 itemStack.shrink(1);
-                // Try to put the bucket back
-                if (source.getEntity().addItem(result)) {
-                    return itemStack;
+                // Drop the bucket result into the dispenser
+                net.minecraft.world.level.block.entity.DispenserBlockEntity dispenser = source.getEntity();
+                if (dispenser.addItem(result) < 0) {
+                    // Dispenser full, just return the stack
                 }
                 return itemStack;
             }

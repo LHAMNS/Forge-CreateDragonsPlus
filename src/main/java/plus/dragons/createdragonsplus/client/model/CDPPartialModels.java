@@ -22,12 +22,10 @@ import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.Create;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.resources.ResourceLocation;
-import plus.dragons.createdragonsplus.common.registry.CDPItems;
 
 public class CDPPartialModels {
     public static void register() {
-        registerRarePackageModel(CDPItems.RARE_BLAZE_PACKAGE.getId(), 12, 10);
-        registerRarePackageModel(CDPItems.RARE_MARBLE_GATE_PACKAGE.getId(), 12, 10);
+        // RARE_BLAZE_PACKAGE and RARE_MARBLE_GATE_PACKAGE not yet available in this port
     }
 
     public static void registerRarePackageModel(ResourceLocation id, int width, int height) {

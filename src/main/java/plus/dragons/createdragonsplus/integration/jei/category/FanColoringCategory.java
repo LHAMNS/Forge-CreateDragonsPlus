@@ -61,7 +61,8 @@ public class FanColoringCategory extends ProcessingViaFanCategory<ColoringRecipe
         var icon = new Icon();
         var catalyst = AllBlocks.ENCASED_FAN.asStack();
         catalyst.setHoverName(CDPLang.description("recipe", id, "fan").component().copy().withStyle(style -> style.withItalic(false)));
-        var info = new Info<>(FanColoringCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
+        var recipeType = new mezz.jei.api.recipe.RecipeType<>(id, ColoringRecipe.class);
+        var info = new Info<>(recipeType, title, background, icon, FanColoringCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
         return new FanColoringCategory(info);
     }
 

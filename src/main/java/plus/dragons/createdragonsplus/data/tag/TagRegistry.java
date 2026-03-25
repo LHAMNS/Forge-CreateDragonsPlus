@@ -78,7 +78,7 @@ public class TagRegistry<T, P extends RegistrateTagsProvider<T>> {
     }
 
     public void generate(RegistrateLangProvider provider) {
-        this.localizations.forEach(provider::add);
+        this.localizations.forEach((tag, name) -> provider.add(tag.location().toLanguageKey("tag"), name));
     }
 
     protected class ProviderEntry {

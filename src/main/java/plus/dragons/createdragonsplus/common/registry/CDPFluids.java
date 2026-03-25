@@ -66,6 +66,11 @@ import plus.dragons.createdragonsplus.data.recipe.CreateRecipeBuilders;
 import plus.dragons.createdragonsplus.data.tag.IntrinsicTagRegistry;
 
 public class CDPFluids {
+    private static int dyeColorToInt(DyeColor color) {
+        float[] c = color.getTextureDiffuseColors();
+        return ((int)(c[0] * 255) << 16) | ((int)(c[1] * 255) << 8) | (int)(c[2] * 255);
+    }
+
     public static final ModTags MOD_TAGS = new ModTags();
     public static final CommonTags COMMON_TAGS = new CommonTags();
     public static final EnumMap<DyeColor, FluidEntry<ForgeFlowingFluid.Flowing>> DYES_BY_COLOR = Util.make(
@@ -144,8 +149,7 @@ public class CDPFluids {
     private static FluidEntry<ForgeFlowingFluid.Flowing> dye(DyeColor color) {
         var stillTexture = REGISTRATE.asResource("fluid/dye_still");
         var flowingTexture = REGISTRATE.asResource("fluid/dye_flow");
-        float[] diffuse = color.getTextureDiffuseColors();
-        var tintColor = 0xFF000000 | (((int)(diffuse[0] * 255) & 0xFF) << 16) | (((int)(diffuse[1] * 255) & 0xFF) << 8) | ((int)(diffuse[2] * 255) & 0xFF);
+        var tintColor = 0xFF000000 | dyeColorToInt(color);
         var name = color.getName() + "_dye";
         var tag = COMMON_TAGS.dyesByColor.get(color);
         return REGISTRATE.fluid(name, stillTexture, flowingTexture, DyeFluidType.create(color))
@@ -229,8 +233,14 @@ public class CDPFluids {
         }
 
         static void registerOpenPipeEffects() {
-            DYES_BY_COLOR.forEach((color, entry) -> OpenEndedPipe.registerEffectHandler(new DyeFluidOpenPipeEffect(color)));
-            OpenEndedPipe.registerEffectHandler(new DragonsBreathOpenPipeEffect());
+            DYES_BY_COLOR.forEach((color, entry) -> {
+                var effect = new DyeFluidOpenPipeEffect(color);
+                OpenPipeEffectHandler.REGISTRY.register(entry.get().getSource(), effect);
+                OpenPipeEffectHandler.REGISTRY.register(entry.get(), effect);
+            });
+            var dragonBreathEffect = new DragonsBreathOpenPipeEffect();
+            OpenPipeEffectHandler.REGISTRY.register(DRAGON_BREATH.get().getSource(), dragonBreathEffect);
+            OpenPipeEffectHandler.REGISTRY.register(DRAGON_BREATH.get(), dragonBreathEffect);
         }
     }
 }

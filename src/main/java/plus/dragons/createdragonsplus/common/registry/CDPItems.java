@@ -21,6 +21,8 @@ package plus.dragons.createdragonsplus.common.registry;
 
 import static plus.dragons.createdragonsplus.common.CDPCommon.REGISTRATE;
 
+import com.simibubi.create.content.logistics.box.PackageItem;
+import com.simibubi.create.content.logistics.box.PackageStyles;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import java.util.EnumMap;
 import net.minecraft.ChatFormatting;
@@ -52,6 +54,18 @@ public class CDPItems {
                     CDPGuiTextures.BLAZE_UPGRADE_BASE_SLOT_ICONS,
                     CDPGuiTextures.BLAZE_UPGRADE_ADDITIONS_SLOT_ICONS))
             .lang("Smithing Template")
+            .register();
+
+    public static final ItemEntry<PackageItem> RARE_BLAZE_PACKAGE = REGISTRATE
+            .item("rare_blaze_package", prop -> new PackageItem(prop,
+                    new PackageStyles.PackageStyle("rare_blaze", 12, 10, 0, true)))
+            .lang("Rare Blaze Package")
+            .register();
+
+    public static final ItemEntry<PackageItem> RARE_MARBLE_GATE_PACKAGE = REGISTRATE
+            .item("rare_marble_gate_package", prop -> new PackageItem(prop,
+                    new PackageStyles.PackageStyle("rare_marble_gate", 12, 10, 0, true)))
+            .lang("Rare Marble Gate Package")
             .register();
 
     public static void register(IEventBus modBus) {
@@ -90,8 +104,7 @@ public class CDPItems {
 
         protected CommonTags() {
             super("c");
-            addTag(Tags.Items.BUCKETS, dyeBuckets);
-            addTag(Tags.Items.BUCKETS, dragonBreathBuckets);
+            // Tags.Items.BUCKETS does not exist in 1.20.1
         }
     }
 

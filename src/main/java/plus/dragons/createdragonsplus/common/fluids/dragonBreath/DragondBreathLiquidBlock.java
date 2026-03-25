@@ -26,15 +26,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.FlowingFluid;
+import java.util.function.Supplier;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
 
 public class DragondBreathLiquidBlock extends LiquidBlock {
-    public DragondBreathLiquidBlock(FlowingFluid fluid, Properties properties) {
+    public DragondBreathLiquidBlock(Supplier<? extends ForgeFlowingFluid> fluid, Properties properties) {
         super(fluid, properties);
     }
 
     @Override
-    protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         if (entity instanceof LivingEntity livingEntity && livingEntity.isAffectedByPotions() && entity.tickCount % 5 == 0) {
             livingEntity.addEffect(new MobEffectInstance(MobEffects.HARM, 1, 1, false, false, false));
         }

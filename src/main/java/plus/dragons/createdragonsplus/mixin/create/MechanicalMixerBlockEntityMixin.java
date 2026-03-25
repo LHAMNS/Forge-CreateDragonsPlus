@@ -43,7 +43,7 @@ public abstract class MechanicalMixerBlockEntityMixin extends BasinOperatingBloc
         super(typeIn, pos, state);
     }
 
-    @Inject(method = "getMatchingRecipes", at = @At(value = "FIELD", ordinal = 0, target = "Lcom/simibubi/create/content/kinetics/mixer/MechanicalMixerBlockEntity;level:Lnet/minecraft/world/level/Level;"))
+    @Inject(remap = false, method = "getMatchingRecipes", at = @At(value = "FIELD", ordinal = 0, target = "Lcom/simibubi/create/content/kinetics/mixer/MechanicalMixerBlockEntity;level:Lnet/minecraft/world/level/Level;"))
     private void getMatchingRecipes$checkDragonBreathFluid(CallbackInfoReturnable<List<Recipe<?>>> cir, @Local BasinBlockEntity basin, @Local List<Recipe<?>> matchingRecipes) {
         assert level != null;
         if (CDPConfig.features().generateAutomaticBrewingRecipeForDragonBreathFluid.get()) {
@@ -51,7 +51,7 @@ public abstract class MechanicalMixerBlockEntityMixin extends BasinOperatingBloc
                 for (int i = 0; i < tanks.getTanks(); i++) {
                     var fluid = tanks.getFluidInTank(i);
                     if (fluid.getFluid().is(CDPFluids.COMMON_TAGS.dragonBreath)) {
-                        var recipes = PotionMixingRecipes.sortRecipesByItem(level).get(Items.DRAGON_BREATH);
+                        var recipes = PotionMixingRecipes.BY_ITEM.get(Items.DRAGON_BREATH);
                         if (recipes == null)
                             return;
                         for (var recipe : recipes) {

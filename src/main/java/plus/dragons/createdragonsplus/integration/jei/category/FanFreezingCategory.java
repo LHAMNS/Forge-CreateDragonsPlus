@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * SPDX-License-Identifier: LGPL-3.0-or-later
  * Ported from NeoForge 1.21.1 to Forge 1.20.1
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import plus.dragons.createdragonsplus.common.CDPCommon;
@@ -52,7 +51,8 @@ public class FanFreezingCategory extends ProcessingViaFanCategory<FreezingRecipe
         var icon = new DoubleItemIcon(AllItems.PROPELLER::asStack, Items.POWDER_SNOW_BUCKET::getDefaultInstance);
         var catalyst = AllBlocks.ENCASED_FAN.asStack();
         catalyst.setHoverName(CDPLang.description("recipe", id, "fan").component().copy().withStyle(style -> style.withItalic(false)));
-        var info = new Info<>(FanFreezingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
+        var recipeType = new mezz.jei.api.recipe.RecipeType<>(id, FreezingRecipe.class);
+        var info = new Info<>(recipeType, title, background, icon, FanFreezingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
         return new FanFreezingCategory(info);
     }
 

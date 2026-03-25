@@ -51,7 +51,7 @@ public final class DragonBreathFluidType extends SolidRenderFluidType {
     }
 
     public static FluidTypeFactory create() {
-        int tintColor = FastColor.ARGB32.opaque(0xFFFFFF);
+        int tintColor = 0xFF000000 | 0xFFFFFF;
         Vector3f fogColor = new Color(0xDE9DC5).asVectorF();
         return (properties, stillTexture, flowingTexture) -> new DragonBreathFluidType(properties,
                 stillTexture,

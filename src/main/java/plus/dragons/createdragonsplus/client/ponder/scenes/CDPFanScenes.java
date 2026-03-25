@@ -113,7 +113,7 @@ public class CDPFanScenes {
         var sheep = scene.world().createEntity(level -> {
             Sheep s = new Sheep(EntityType.SHEEP, level);
             s.setColor(DyeColor.WHITE);
-            Vec3 p = pos.getBottomCenter();
+            Vec3 p = Vec3.atBottomCenterOf(pos);
             s.setPos(p.x, p.y, p.z);
             s.xo = p.x;
             s.yo = p.y;
@@ -143,7 +143,7 @@ public class CDPFanScenes {
             as.setItemSlot(EquipmentSlot.LEGS, new ItemStack(Items.LEATHER_LEGGINGS));
             as.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.LEATHER_CHESTPLATE));
             as.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET));
-            as.setPos(pos.getBottomCenter());
+            as.setPos(Vec3.atBottomCenterOf(pos));
             as.lookAt(Anchor.EYES, as.getEyePosition().add(0, 0, -1));
             return as;
         });
@@ -209,7 +209,7 @@ public class CDPFanScenes {
         scene.world().showSection(belt, Direction.DOWN);
         var transported = scene.world().createItemOnBelt(util.grid().at(1, 1, 2), Direction.DOWN, Items.BLAZE_ROD.getDefaultInstance());
         scene.idle(160);
-        scene.world().changeBeltItemTo(transported, Items.BREEZE_ROD.getDefaultInstance());
+        scene.world().changeBeltItemTo(transported, Items.END_ROD.getDefaultInstance());
         scene.idle(30);
     }
 

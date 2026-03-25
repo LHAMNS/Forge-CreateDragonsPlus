@@ -132,8 +132,7 @@ public class ColoringFanProcessingType implements FanProcessingType {
 
     @Override
     public void morphAirFlow(AirFlowParticleAccess particleAccess, RandomSource random) {
-        float[] diffuse = this.color.getTextureDiffuseColors();
-        particleAccess.setColor(new Color(diffuse[0], diffuse[1], diffuse[2]).getRGB());
+        particleAccess.setColor(new Color((int)(this.rgb.x() * 255), (int)(this.rgb.y() * 255), (int)(this.rgb.z() * 255)).getRGB());
         particleAccess.setAlpha(1f);
     }
 
@@ -186,7 +185,7 @@ public class ColoringFanProcessingType implements FanProcessingType {
             if (entity instanceof Sheep sheep) {
                 sheep.setColor(this.color);
             } else if (entity instanceof Shulker shulker) {
-                shulker.setVariant(java.util.Optional.of(this.color));
+                shulker.setVariant(Optional.of(this.color));
             } else if (entity instanceof Cat cat) {
                 cat.setCollarColor(this.color);
             } else if (entity instanceof Wolf wolf) {

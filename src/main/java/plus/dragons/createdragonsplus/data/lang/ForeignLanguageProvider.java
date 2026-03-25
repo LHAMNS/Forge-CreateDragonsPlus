@@ -59,7 +59,7 @@ public class ForeignLanguageProvider implements DataProvider {
         this.modid = modid;
         this.templateLocale = templateLocale;
         this.langPathProvider = output.createPathProvider(Target.RESOURCE_PACK, "lang");
-        this.resourceManager = ((ExistingFileHelperAccessor) existingFileHelper).invokeGetManager(PackType.CLIENT_RESOURCES);
+        this.resourceManager = ((ExistingFileHelperAccessor) existingFileHelper).getClientResources();
     }
 
     public ForeignLanguageProvider(String modid, PackOutput output, ExistingFileHelper existingFileHelper) {
@@ -124,7 +124,7 @@ public class ForeignLanguageProvider implements DataProvider {
             try (JsonWriter jsonwriter = new JsonWriter(
                     new OutputStreamWriter(hashingOutputStream, StandardCharsets.UTF_8))) {
                 jsonwriter.setSerializeNulls(false);
-                jsonwriter.setIndent(" ".repeat(java.lang.Math.max(0, INDENT_WIDTH.get())));
+                jsonwriter.setIndent("  ");
                 GsonHelper.writeValue(jsonwriter, result, KEY_COMPARATOR);
             }
             output.writeIfNeeded(path, byteArrayOutputStream.toByteArray(), hashingOutputStream.hash());

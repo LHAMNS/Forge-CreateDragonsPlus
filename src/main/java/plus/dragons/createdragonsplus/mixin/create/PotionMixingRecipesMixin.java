@@ -35,7 +35,7 @@ public class PotionMixingRecipesMixin {
     @Unique
     private static final List<MixingRecipe> FLUID_DRAGON_BREATH_RECIPES = new ArrayList<>();
 
-    @WrapOperation(method = "createRecipesImpl", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/potion/PotionMixingRecipes;createRecipe(Ljava/lang/String;Lnet/minecraft/world/item/crafting/Ingredient;Lnet/minecraftforge/fluids/FluidStack;Lnet/minecraftforge/fluids/FluidStack;)Lcom/simibubi/create/content/kinetics/mixer/MixingRecipe;"))
+    @WrapOperation(remap = false, method = "createRecipesImpl", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/fluids/potion/PotionMixingRecipes;createRecipe(Ljava/lang/String;Lnet/minecraft/world/item/crafting/Ingredient;Lnet/minecraftforge/fluids/FluidStack;Lnet/minecraftforge/fluids/FluidStack;)Lcom/simibubi/create/content/kinetics/mixer/MixingRecipe;"))
     private static MixingRecipe createRecipesImpl$createDragonBreathFluidRecipe(String id, Ingredient ingredient, FluidStack fromFluid, FluidStack toFluid, Operation<MixingRecipe> original, @Local(name = "mixingRecipes") List<MixingRecipe> mixingRecipes) {
         if (CDPConfig.features().generateAutomaticBrewingRecipeForDragonBreathFluid.get()) {
             if (ingredient.test(new ItemStack(Items.DRAGON_BREATH))) {
@@ -53,7 +53,7 @@ public class PotionMixingRecipesMixin {
         return original.call(id, ingredient, fromFluid, toFluid);
     }
 
-    @Inject(method = "sortRecipesByItem(Ljava/util/List;)Ljava/util/Map;", at = @At("TAIL"))
+    @Inject(remap = false, method = "sortRecipesByItem(Ljava/util/List;)Ljava/util/Map;", at = @At("TAIL"))
     private static void sortRecipesByItem$sortDragonBreathFluidRecipes(List<MixingRecipe> all, CallbackInfoReturnable<Map<Item, List<MixingRecipe>>> cir) {
         var byItem = cir.getReturnValue();
         byItem.computeIfAbsent(Items.DRAGON_BREATH, ignored -> new ArrayList<>()).addAll(FLUID_DRAGON_BREATH_RECIPES);
