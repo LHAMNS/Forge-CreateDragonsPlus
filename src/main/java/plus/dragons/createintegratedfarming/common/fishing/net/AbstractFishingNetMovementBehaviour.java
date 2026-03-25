@@ -56,10 +56,10 @@ public abstract class AbstractFishingNetMovementBehaviour<T extends AbstractFish
         if (!entity.isBaby() && level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
             var lootTable = level.getServer().getLootData().getLootTable(entity.getLootTable());
             var lootParams = fishing.buildCaptureLootContext(context, level, entity);
-            lootTable.getRandomItems(lootParams, entity.getLootTableSeed(), item -> collectOrDropItem(context, item));
+            lootTable.getRandomItems(lootParams, entity.getLootTableSeed(), item -> dropItem(context, item));
             if (CIFConfig.server().fishingNetCapturedCreatureDropExpNugget.get()) {
                 int experience = net.minecraftforge.event.ForgeEventFactory.getExperienceDrop(entity, fishing.player, entity.getExperienceReward());
-                collectOrDropItem(context, new ItemStack(AllItems.EXP_NUGGET.get(), Math.max(1, experience / 3)));
+                dropItem(context, new ItemStack(AllItems.EXP_NUGGET.get(), Math.max(1, experience / 3)));
             }
         }
         entity.discard();
@@ -96,7 +96,7 @@ public abstract class AbstractFishingNetMovementBehaviour<T extends AbstractFish
                 var event = new ItemFishedEvent(loots, 0, fishing.getFishingHook());
                 MinecraftForge.EVENT_BUS.post(event);
                 if (!event.isCanceled()) {
-                    loots.forEach(stack -> collectOrDropItem(context, stack));
+                    loots.forEach(stack -> dropItem(context, stack));
                 }
             }
             fishing.reset(level);
