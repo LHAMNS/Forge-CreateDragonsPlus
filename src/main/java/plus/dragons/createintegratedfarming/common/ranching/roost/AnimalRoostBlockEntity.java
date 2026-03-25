@@ -1,0 +1,228 @@
+/*
+ * Copyright (C) 2025  DragonsPlus
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
+ * SPDX-License-Identifier: LGPL-3.0-or-later
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package plus.dragons.createintegratedfarming.common.ranching.roost;
+
+import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
+import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
+import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.item.ItemHelper;
+import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.ItemHandlerHelper;
+import net.minecraftforge.items.ItemStackHandler;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import plus.dragons.createintegratedfarming.config.CIFConfig;
+
+public abstract class AnimalRoostBlockEntity extends SmartBlockEntity {
+    protected final ItemStackHandler inventory;
+    private final LazyOptional<IItemHandler> outputCapability;
+    protected int feedCooldown;
+    protected int eggTime = productionCooldown();
+
+    public int productionCooldown() {
+        return 12000;
+    }
+
+    protected abstract ResourceLocation productionLootTable();
+
+    public AnimalRoostBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+        setLazyTickRate(20);
+        this.inventory = new ItemStackHandler(CIFConfig.server().roostingInventorySlotCount.get()) {
+            @Override
+            public int getSlotLimit(int slot) {
+                return CIFConfig.server().roostingInventorySlotSize.get();
+            }
+        };
+        this.outputCapability = LazyOptional.of(() -> new OutputItemHandler(inventory));
+    }
+
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            if (side == getBlockState().getValue(HorizontalDirectionalBlock.FACING))
+                return LazyOptional.empty();
+            return outputCapability.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        outputCapability.invalidate();
+    }
+
+    public IItemHandler getOutputHandler() {
+        return outputCapability.orElseThrow(IllegalStateException::new);
+    }
+
+    @Override
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
+        behaviours.add(new DirectBeltInputBehaviour(this)
+                .onlyInsertWhen(side -> side == getBlockState().getValue(HorizontalDirectionalBlock.FACING).getOpposite())
+                .considerOccupiedWhen(side -> feedCooldown > 0)
+                .setInsertionHandler(this::tryInsertFrom));
+    }
+
+    @Override
+    public void initialize() {
+        assert level != null;
+        super.initialize();
+        if (eggTime >= productionCooldown()) {
+            eggTime = productionCooldown() / 2 + level.random.nextInt(productionCooldown() / 2);
+        }
+    }
+
+    @Override
+    public void lazyTick() {
+        if (!(level instanceof ServerLevel serverLevel))
+            return;
+        boolean changed = false;
+        if (feedCooldown > 0) {
+            feedCooldown = Math.max(0, feedCooldown - lazyTickRate);
+            changed = true;
+        }
+        if (eggTime > 0) {
+            eggTime = Math.max(0, eggTime - lazyTickRate);
+            changed = true;
+        }
+        if (eggTime <= 0) {
+            boolean inserted = false;
+            var lootTable = serverLevel.getServer().getLootData().getLootTable(productionLootTable());
+            var lootParams = new LootParams.Builder(serverLevel)
+                    .withParameter(LootContextParams.BLOCK_STATE, getBlockState())
+                    .withParameter(LootContextParams.ORIGIN, worldPosition.getCenter())
+                    .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
+                    .withOptionalParameter(LootContextParams.BLOCK_ENTITY, this)
+                    .create(LootContextParamSets.BLOCK);
+            var lootStacks = lootTable.getRandomItems(lootParams);
+            for (var stack : lootStacks) {
+                ItemStack remainder = ItemHandlerHelper.insertItem(inventory, stack, false);
+                inserted |= stack.getCount() != remainder.getCount();
+            }
+            if (inserted) {
+                eggTime = 6000 + level.random.nextInt(6000);
+                level.playSound(
+                        null, worldPosition, SoundEvents.CHICKEN_EGG, SoundSource.BLOCKS,
+                        1.0F, (level.random.nextFloat() - level.random.nextFloat()) * 0.2F + 1.0F);
+                changed = true;
+            }
+        }
+        if (changed)
+            notifyUpdate();
+    }
+
+    @Override
+    protected void write(CompoundTag tag, boolean clientPacket) {
+        super.write(tag, clientPacket);
+        tag.put("Inventory", inventory.serializeNBT());
+        tag.putInt("EggLayTime", eggTime);
+        tag.putInt("FeedCooldown", feedCooldown);
+    }
+
+    @Override
+    protected void read(CompoundTag tag, boolean clientPacket) {
+        super.read(tag, clientPacket);
+        inventory.deserializeNBT(tag.getCompound("Inventory"));
+        eggTime = Mth.clamp(tag.getInt("EggLayTime"), 0, 12000);
+        feedCooldown = tag.getInt("FeedCooldown");
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        ItemHelper.dropContents(level, worldPosition, inventory);
+    }
+
+    protected ItemStack tryInsertFrom(TransportedItemStack transported, Direction side, boolean simulate) {
+        assert level != null;
+        ItemStack stack = transported.stack.copy();
+        if (feedItem(stack, simulate)) {
+            if (!simulate) stack.shrink(1);
+        }
+        return stack;
+    }
+
+    public abstract boolean feedItem(ItemStack stack, boolean simulate);
+
+    /**
+     * Output-only item handler wrapper: blocks insertion, allows extraction.
+     */
+    private static class OutputItemHandler implements IItemHandler {
+        private final ItemStackHandler inner;
+
+        OutputItemHandler(ItemStackHandler inner) {
+            this.inner = inner;
+        }
+
+        @Override
+        public int getSlots() {
+            return inner.getSlots();
+        }
+
+        @Override
+        public @NotNull ItemStack getStackInSlot(int slot) {
+            return inner.getStackInSlot(slot);
+        }
+
+        @Override
+        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            return stack; // block insertion
+        }
+
+        @Override
+        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return inner.extractItem(slot, amount, simulate);
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return inner.getSlotLimit(slot);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            return false; // block insertion
+        }
+    }
+}

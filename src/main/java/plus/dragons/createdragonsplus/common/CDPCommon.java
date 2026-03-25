@@ -41,6 +41,7 @@ import plus.dragons.createdragonsplus.common.registry.CDPItems;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
 import plus.dragons.createdragonsplus.config.CDPConfig;
 import plus.dragons.createdragonsplus.integration.ModIntegration;
+import plus.dragons.createintegratedfarming.common.CIFCommon;
 
 @Mod(CDPCommon.ID)
 public class CDPCommon {
@@ -64,6 +65,8 @@ public class CDPCommon {
         CDPFanProcessingTypes.register();
         modBus.register(this);
         CDPConfig.register(ModLoadingContext.get().getActiveContainer());
+        // Register Create: Integrated Farming (same jar)
+        CIFCommon.register(modBus);
     }
 
     @SubscribeEvent
@@ -73,6 +76,8 @@ public class CDPCommon {
             if (integration.enabled())
                 event.enqueueWork(integration::onCommonSetup);
         }
+        // CIF common setup
+        event.enqueueWork(CIFCommon::onCommonSetup);
     }
 
     public static ResourceLocation asResource(String path) {
