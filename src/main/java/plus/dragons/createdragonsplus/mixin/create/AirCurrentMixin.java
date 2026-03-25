@@ -59,7 +59,7 @@ public class AirCurrentMixin implements AirCurrentAccess {
     @Shadow
     public boolean pushing;
 
-    @ModifyExpressionValue(method = "rebuild", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;getAt(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;)Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;"))
+    @ModifyExpressionValue(remap = false, method = "rebuild", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;getAt(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;)Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;"))
     private @Nullable FanProcessingType rebuild$checkDragonHead(@Nullable FanProcessingType original, @Local(name = "world") Level world, @Local(name = "currentPos") BlockPos currentPos) {
         var state = world.getBlockState(currentPos);
         var direction = source.getAirFlowDirection();
@@ -74,7 +74,7 @@ public class AirCurrentMixin implements AirCurrentAccess {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    @WrapOperation(method = "rebuild", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lcom/simibubi/create/content/kinetics/fan/AirCurrent$AirCurrentSegment;type:Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;"))
+    @WrapOperation(remap = false, method = "rebuild", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lcom/simibubi/create/content/kinetics/fan/AirCurrent$AirCurrentSegment;type:Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;"))
     private void rebuild$setParticleData(@Coerce Object segment, FanProcessingType value, Operation<Void> original, @Local(name = "world") Level world, @Local(name = "currentPos") BlockPos currentPos) {
         original.call(segment, value);
         var access = (AirCurrentSegmentAccess) segment;
@@ -83,7 +83,7 @@ public class AirCurrentMixin implements AirCurrentAccess {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    @WrapOperation(method = "tickAffectedEntities", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;spawnProcessingParticles(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/phys/Vec3;)V"))
+    @WrapOperation(remap = false, method = "tickAffectedEntities", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;spawnProcessingParticles(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/phys/Vec3;)V"))
     private void tickAffectedEntities$spawnProcessingParticlesWithParticleData(FanProcessingType type, Level level, Vec3 pos, Operation<Void> original, @Local(name = "entityDistance") double distance) {
         if (type instanceof DynamicParticleFanProcessingType dynamicType) {
             var segment = this.getSegmentAccessAt((float) distance);

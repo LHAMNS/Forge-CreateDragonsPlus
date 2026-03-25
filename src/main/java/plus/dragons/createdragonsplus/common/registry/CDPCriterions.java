@@ -18,20 +18,13 @@
 
 package plus.dragons.createdragonsplus.common.registry;
 
-import net.minecraft.advancements.CriterionTrigger;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import plus.dragons.createdragonsplus.common.CDPCommon;
-import plus.dragons.createdragonsplus.common.advancements.criterion.StatTrigger;
+import net.minecraftforge.eventbus.api.IEventBus;
 
 public class CDPCriterions {
-    private static final DeferredRegister<CriterionTrigger<?>> TRIGGER_TYPES = DeferredRegister.create(BuiltInRegistries.TRIGGER_TYPES, CDPCommon.ID);
-    public static final DeferredHolder<CriterionTrigger<?>, StatTrigger> STAT = TRIGGER_TYPES
-            .register("stat", StatTrigger::new);
+    // Criterion triggers removed during port - StatTrigger and related classes
+    // are not available for Forge 1.20.1
 
     public static void register(IEventBus modBus) {
-        TRIGGER_TYPES.register(modBus);
+        // No-op: criterion triggers not yet ported to Forge 1.20.1
     }
 }

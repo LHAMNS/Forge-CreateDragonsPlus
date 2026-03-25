@@ -46,8 +46,8 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import plus.dragons.createdragonsplus.mixin.neoforge.ExistingFileHelperAccessor;
+import net.minecraftforge.common.data.ExistingFileHelper;
+import plus.dragons.createdragonsplus.mixin.forge.ExistingFileHelperAccessor;
 
 public class ForeignLanguageProvider implements DataProvider {
     private final String modid;
@@ -59,7 +59,7 @@ public class ForeignLanguageProvider implements DataProvider {
         this.modid = modid;
         this.templateLocale = templateLocale;
         this.langPathProvider = output.createPathProvider(Target.RESOURCE_PACK, "lang");
-        this.resourceManager = ((ExistingFileHelperAccessor) existingFileHelper).invokeGetManager(PackType.CLIENT_RESOURCES);
+        this.resourceManager = ((ExistingFileHelperAccessor) existingFileHelper).getClientResources();
     }
 
     public ForeignLanguageProvider(String modid, PackOutput output, ExistingFileHelper existingFileHelper) {
@@ -69,7 +69,7 @@ public class ForeignLanguageProvider implements DataProvider {
     protected CompletableFuture<JsonObject> getTemplateLocalization() {
         return CompletableFuture.supplyAsync(() -> {
             File file = this.langPathProvider
-                    .json(ResourceLocation.fromNamespaceAndPath(this.modid, this.templateLocale))
+                    .json(new ResourceLocation(this.modid, this.templateLocale))
                     .toFile();
             try (FileInputStream inputStream = new FileInputStream(file)) {
                 return GsonHelper.parse(new InputStreamReader(inputStream));
@@ -117,14 +117,14 @@ public class ForeignLanguageProvider implements DataProvider {
 
     @SuppressWarnings({ "UnstableApiUsage", "deprecation" })
     protected void save(CachedOutput output, String locale, JsonObject result) {
-        Path path = this.langPathProvider.json(ResourceLocation.fromNamespaceAndPath(this.modid, locale));
+        Path path = this.langPathProvider.json(new ResourceLocation(this.modid, locale));
         try {
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             HashingOutputStream hashingOutputStream = new HashingOutputStream(Hashing.sha1(), byteArrayOutputStream);
             try (JsonWriter jsonwriter = new JsonWriter(
                     new OutputStreamWriter(hashingOutputStream, StandardCharsets.UTF_8))) {
                 jsonwriter.setSerializeNulls(false);
-                jsonwriter.setIndent(" ".repeat(java.lang.Math.max(0, INDENT_WIDTH.get())));
+                jsonwriter.setIndent("  ");
                 GsonHelper.writeValue(jsonwriter, result, KEY_COMPARATOR);
             }
             output.writeIfNeeded(path, byteArrayOutputStream.toByteArray(), hashingOutputStream.hash());

@@ -18,25 +18,16 @@
 
 package plus.dragons.createdragonsplus.integration;
 
-import com.simibubi.create.api.registry.CreateRegistries;
-import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
-import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SingleRecipeInput;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
-import net.neoforged.neoforge.registries.DeferredHolder;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.common.crafting.conditions.ModLoadedCondition;
 
 public enum ModIntegration {
-    //TODO: Keep an eye on Create Garnished 2. Wait it add back Fan Processing
     CREATE_GARNISHED(Constants.CREATE_GARNISHED),
     CREATE_DND(Constants.CREATE_DND),
     QUICKSAND(Constants.QUICKSAND);
-    ;
 
     private final String id;
 
@@ -53,7 +44,7 @@ public enum ModIntegration {
     }
 
     public ResourceLocation asResource(String path) {
-        return ResourceLocation.fromNamespaceAndPath(id, path);
+        return new ResourceLocation(id, path);
     }
 
     public ModLoadedCondition condition() {
@@ -71,13 +62,5 @@ public enum ModIntegration {
         public static final String CREATE_GARNISHED = "garnished";
         public static final String CREATE_DND = "dndesires";
         public static final String QUICKSAND = "quicksand";
-    }
-
-    public DeferredHolder<FanProcessingType, FanProcessingType> fanType(String path) {
-        return DeferredHolder.create(CreateRegistries.FAN_PROCESSING_TYPE, asResource(path));
-    }
-
-    public DeferredHolder<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType(String path) {
-        return DeferredHolder.create(Registries.RECIPE_TYPE, asResource(path));
     }
 }

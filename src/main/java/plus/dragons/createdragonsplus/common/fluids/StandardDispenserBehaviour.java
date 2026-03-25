@@ -19,7 +19,7 @@
 package plus.dragons.createdragonsplus.common.fluids;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.world.item.DispensibleContainerItem;
 import net.minecraft.world.item.ItemStack;
@@ -32,13 +32,25 @@ public class StandardDispenserBehaviour extends DefaultDispenseItemBehavior {
 
     private final DefaultDispenseItemBehavior defaultDispenseItemBehavior = new DefaultDispenseItemBehavior();
 
+    @Override
     public ItemStack execute(BlockSource source, ItemStack itemStack) {
         DispensibleContainerItem dispensiblecontaineritem = (DispensibleContainerItem) itemStack.getItem();
-        BlockPos blockpos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
-        Level level = source.level();
-        if (dispensiblecontaineritem.emptyContents(null, level, blockpos, null, itemStack)) {
+        BlockPos blockpos = source.getPos().relative(source.getBlockState().getValue(DispenserBlock.FACING));
+        Level level = source.getLevel();
+        if (dispensiblecontaineritem.emptyContents(null, level, blockpos, null)) {
             dispensiblecontaineritem.checkExtraContent(null, level, itemStack, blockpos);
-            return this.consumeWithRemainder(source, itemStack, new ItemStack(Items.BUCKET));
+            ItemStack result = new ItemStack(Items.BUCKET);
+            if (itemStack.getCount() == 1) {
+                return result;
+            } else {
+                itemStack.shrink(1);
+                // Drop the bucket result into the dispenser
+                net.minecraft.world.level.block.entity.DispenserBlockEntity dispenser = source.getEntity();
+                if (dispenser.addItem(result) < 0) {
+                    // Dispenser full, just return the stack
+                }
+                return itemStack;
+            }
         } else {
             return this.defaultDispenseItemBehavior.dispense(source, itemStack);
         }

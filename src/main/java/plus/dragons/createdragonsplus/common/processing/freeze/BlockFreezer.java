@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,15 +19,15 @@
 
 package plus.dragons.createdragonsplus.common.processing.freeze;
 
-import com.simibubi.create.api.boiler.BoilerHeater;
-import com.simibubi.create.api.registry.SimpleRegistry;
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * The cold version of {@link BoilerHeater} with the same specification of "passive" and "active".
+ * The cold version of a boiler heater with the same specification of "passive" and "active".
  * <p>
  * When used for Keg, {@link #PASSIVE_FREEZE} provides 1 cold level,
  * and active freeze provides (1 + {@link #getFreeze(Level, BlockPos, BlockState) active freeze}) cold levels.
@@ -36,15 +37,19 @@ public interface BlockFreezer {
     int PASSIVE_FREEZE = 0;
     int NO_FREEZE = -1;
 
-    SimpleRegistry<Block, BlockFreezer> REGISTRY = SimpleRegistry.create();
+    Map<Block, BlockFreezer> REGISTRY = new HashMap<>();
 
     /**
      * Gets the freeze at the given location. If a freezer is present, queries it for freeze.
      * If not, returns {@link #NO_FREEZE}.
      */
     static float findFreeze(Level level, BlockPos pos, BlockState state) {
-        BlockFreezer freezer = REGISTRY.get(state);
+        BlockFreezer freezer = REGISTRY.get(state.getBlock());
         return freezer != null ? freezer.getFreeze(level, pos, state) : NO_FREEZE;
+    }
+
+    static void register(Block block, BlockFreezer freezer) {
+        REGISTRY.put(block, freezer);
     }
 
     /**

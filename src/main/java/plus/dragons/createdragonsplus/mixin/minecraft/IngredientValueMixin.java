@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,29 +19,12 @@
 
 package plus.dragons.createdragonsplus.mixin.minecraft;
 
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import com.mojang.datafixers.util.Either;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import java.util.function.Function;
-import me.fallenbreath.conditionalmixin.api.annotation.Condition;
-import me.fallenbreath.conditionalmixin.api.annotation.Condition.Type;
-import me.fallenbreath.conditionalmixin.api.annotation.Restriction;
-import net.minecraft.world.item.crafting.Ingredient;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import plus.dragons.createdragonsplus.data.recipe.integration.IntegrationIngredient;
-import plus.dragons.createdragonsplus.mixin.util.RunDataMixinCondition;
-
-@Restriction(require = @Condition(type = Type.TESTER, tester = RunDataMixinCondition.class))
-@Mixin(Ingredient.Value.class)
-public interface IngredientValueMixin {
-    @ModifyExpressionValue(method = "<clinit>", at = @At(value = "INVOKE", target = "Lcom/mojang/serialization/MapCodec;xmap(Ljava/util/function/Function;Ljava/util/function/Function;)Lcom/mojang/serialization/MapCodec;"))
-    private static MapCodec<Ingredient.Value> clinit$addIntegrationValueCodec(MapCodec<Ingredient.Value> codec) {
-        return Codec.mapEither(IntegrationIngredient.Value.MAP_CODEC, codec).xmap(
-                either -> either.map(Function.identity(), Function.identity()),
-                value -> value instanceof IntegrationIngredient.Value integrationValue
-                        ? Either.left(integrationValue)
-                        : Either.right(value));
-    }
+/**
+ * In Forge 1.20.1, Ingredient.Value does not use codecs for serialization.
+ * Integration ingredient support is handled directly through the serialize()/getItems() methods
+ * in IntegrationIngredient.Value instead.
+ * This class is kept as a stub for compatibility.
+ */
+public class IngredientValueMixin {
+    // Not applicable in Forge 1.20.1 - Ingredient.Value uses JSON serialization, not codecs.
 }

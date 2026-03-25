@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,26 +21,20 @@ package plus.dragons.createdragonsplus.common.registry;
 
 import static plus.dragons.createdragonsplus.common.CDPCommon.REGISTRATE;
 
-import com.simibubi.create.AllTags.AllItemTags;
-import com.simibubi.create.Create;
 import com.simibubi.create.content.logistics.box.PackageItem;
-import com.simibubi.create.content.logistics.box.PackageStyles.PackageStyle;
-import com.tterrag.registrate.providers.ProviderType;
+import com.simibubi.create.content.logistics.box.PackageStyles;
 import com.tterrag.registrate.util.entry.ItemEntry;
-import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 import java.util.EnumMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
-import net.minecraft.util.Unit;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SmithingTemplateItem;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.Tags;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.common.Tags;
 import plus.dragons.createdragonsplus.client.texture.CDPGuiTextures;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.fluids.dye.DyeColors;
@@ -49,26 +44,6 @@ public class CDPItems {
     public static final CommonTags COMMON_TAGS = new CommonTags();
     public static final ModTags MOD_TAGS = new ModTags();
 
-    public static final ItemEntry<PackageItem> RARE_BLAZE_PACKAGE = REGISTRATE
-            .item("rare_blaze_pacakge", prop -> new PackageItem(prop,
-                    new PackageStyle("rare_blaze", 12, 10, 21, true)))
-            .setData(ProviderType.LANG, NonNullBiConsumer.noop())
-            .properties(prop -> prop.stacksTo(1).component(DataComponents.FIRE_RESISTANT, Unit.INSTANCE))
-            .tag(AllItemTags.PACKAGES.tag)
-            .model((ctx, prov) -> prov
-                    .withExistingParent(ctx.getName(), Create.asResource("item/package/custom_12x10"))
-                    .texture("2", prov.modLoc("item/package/rare_blaze")))
-            .register();
-    public static final ItemEntry<PackageItem> RARE_MARBLE_GATE_PACKAGE = REGISTRATE
-            .item("rare_marble_gate_pacakge", prop -> new PackageItem(prop,
-                    new PackageStyle("rare_marble_gate", 12, 10, 21, true)))
-            .setData(ProviderType.LANG, NonNullBiConsumer.noop())
-            .properties(prop -> prop.stacksTo(1))
-            .tag(AllItemTags.PACKAGES.tag)
-            .model((ctx, prov) -> prov
-                    .withExistingParent(ctx.getName(), Create.asResource("item/package/custom_12x10"))
-                    .texture("2", prov.modLoc("item/package/rare_marble_gate")))
-            .register();
     public static final ItemEntry<SmithingTemplateItem> BLAZE_UPGRADE_SMITHING_TEMPLATE = REGISTRATE
             .item("blaze_upgrade_smithing_template", prop -> new SmithingTemplateItem(
                     Tooltips.BLAZE_UPGRADE_APPLIES_TO,
@@ -81,27 +56,38 @@ public class CDPItems {
             .lang("Smithing Template")
             .register();
 
+    public static final ItemEntry<PackageItem> RARE_BLAZE_PACKAGE = REGISTRATE
+            .item("rare_blaze_package", prop -> new PackageItem(prop,
+                    new PackageStyles.PackageStyle("rare_blaze", 12, 10, 0, true)))
+            .lang("Rare Blaze Package")
+            .register();
+
+    public static final ItemEntry<PackageItem> RARE_MARBLE_GATE_PACKAGE = REGISTRATE
+            .item("rare_marble_gate_package", prop -> new PackageItem(prop,
+                    new PackageStyles.PackageStyle("rare_marble_gate", 12, 10, 0, true)))
+            .lang("Rare Marble Gate Package")
+            .register();
+
     public static void register(IEventBus modBus) {
         REGISTRATE.registerItemTags(COMMON_TAGS);
         REGISTRATE.registerItemTags(MOD_TAGS);
     }
 
     public static class Tooltips {
-        private static final ResourceLocation BLAZE_UPGRADE_SMITHING_TEMPLATE = CDPCommon.asResource("smithing_template.blaze_upgrade");
         public static final Component BLAZE_UPGRADE_APPLIES_TO = REGISTRATE.addLang("item",
-                BLAZE_UPGRADE_SMITHING_TEMPLATE.withSuffix(".applies_to"),
+                new ResourceLocation(CDPCommon.ID, "smithing_template.blaze_upgrade.applies_to"),
                 "Blaze Burner").withStyle(ChatFormatting.BLUE);
         public static final Component BLAZE_UPGRADE_INGREDIENTS = REGISTRATE.addLang("item",
-                BLAZE_UPGRADE_SMITHING_TEMPLATE.withSuffix(".ingredients"),
+                new ResourceLocation(CDPCommon.ID, "smithing_template.blaze_upgrade.ingredients"),
                 "Working blocks for Blaze").withStyle(ChatFormatting.BLUE);
         public static final Component BLAZE_UPGRADE = REGISTRATE.addLang("upgrade",
-                CDPCommon.asResource("blaze_upgrade"),
+                new ResourceLocation(CDPCommon.ID, "blaze_upgrade"),
                 "Blaze Upgrade").withStyle(ChatFormatting.GRAY);
         public static final Component BLAZE_UPGRADE_BASE_SLOT = REGISTRATE.addLang("item",
-                BLAZE_UPGRADE_SMITHING_TEMPLATE.withSuffix(".base_slot_description"),
+                new ResourceLocation(CDPCommon.ID, "smithing_template.blaze_upgrade.base_slot_description"),
                 "Add Blaze Burner");
         public static final Component BLAZE_UPGRADE_ADDITIONS_SLOT = REGISTRATE.addLang("item",
-                BLAZE_UPGRADE_SMITHING_TEMPLATE.withSuffix(".additions_slot_description"),
+                new ResourceLocation(CDPCommon.ID, "smithing_template.blaze_upgrade.additions_slot_description"),
                 "Add working blocks for Blaze");
     }
 
@@ -118,8 +104,7 @@ public class CDPItems {
 
         protected CommonTags() {
             super("c");
-            addTag(Tags.Items.BUCKETS, dyeBuckets);
-            addTag(Tags.Items.BUCKETS, dragonBreathBuckets);
+            // Tags.Items.BUCKETS does not exist in 1.20.1
         }
     }
 

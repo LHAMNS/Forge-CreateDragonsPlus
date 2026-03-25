@@ -41,11 +41,11 @@ public class SandingScenes {
     public static void bulkSanding(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
         if (SANDING_CATALYST == null) {
-            var optional = BuiltInRegistries.BLOCK.getOptional(ResourceLocation.fromNamespaceAndPath("quicksand", "quicksand"));
+            var optional = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation("quicksand", "quicksand"));
             if (optional.isEmpty()) {
                 var optional2 = BuiltInRegistries.BLOCK.getTag(CDPBlocks.MOD_TAGS.fanSandingCatalysts);
                 if (optional2.isEmpty() || optional2.get().size() == 0)
-                    optional2 = BuiltInRegistries.BLOCK.getTag(TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath("dndesires", "fan_processing_catalysts/sanding")));
+                    optional2 = BuiltInRegistries.BLOCK.getTag(TagKey.create(Registries.BLOCK, new ResourceLocation("dndesires", "fan_processing_catalysts/sanding")));
                 if (optional2.isEmpty() || optional2.get().size() == 0) {
                     LogUtils.getLogger().error("Sanding catalysts not found! Please report this to Author with log!");
                     SANDING_CATALYST = Blocks.SAND.defaultBlockState();

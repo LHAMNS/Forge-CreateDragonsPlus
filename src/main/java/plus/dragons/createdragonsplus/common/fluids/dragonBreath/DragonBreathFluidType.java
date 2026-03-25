@@ -38,8 +38,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.SoundActions;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.common.SoundActions;
+import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 import plus.dragons.createdragonsplus.common.fluids.SolidRenderFluidType;
@@ -51,7 +51,7 @@ public final class DragonBreathFluidType extends SolidRenderFluidType {
     }
 
     public static FluidTypeFactory create() {
-        int tintColor = FastColor.ARGB32.opaque(0xFFFFFF);
+        int tintColor = 0xFF000000 | 0xFFFFFF;
         Vector3f fogColor = new Color(0xDE9DC5).asVectorF();
         return (properties, stillTexture, flowingTexture) -> new DragonBreathFluidType(properties,
                 stillTexture,

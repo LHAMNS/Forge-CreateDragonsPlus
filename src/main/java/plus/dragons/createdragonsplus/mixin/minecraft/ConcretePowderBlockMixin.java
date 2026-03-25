@@ -88,7 +88,7 @@ public abstract class ConcretePowderBlockMixin extends FallingBlock {
             var fluid = level.getBlockState(mutableBlockPos).getFluidState();
             if (fluid.is(CDPFluids.COMMON_TAGS.dyes)) {
                 var coloredConcrete = BuiltInRegistries.BLOCK.getOptional(
-                        ResourceLocation.withDefaultNamespace(BuiltInRegistries.FLUID.getKey(fluid.getType()).getPath().replace("_dye", "_concrete").replace("flowing_", "")));
+                        new ResourceLocation("minecraft", BuiltInRegistries.FLUID.getKey(fluid.getType()).getPath().replace("_dye", "_concrete").replace("flowing_", "")));
                 return coloredConcrete.orElse(concrete).defaultBlockState();
             }
         }

@@ -19,7 +19,7 @@
 package plus.dragons.createdragonsplus.common.fluids.dye;
 
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.fluids.capability.wrappers.FluidBucketWrapper;
+import net.minecraftforge.fluids.capability.wrappers.FluidBucketWrapper;
 
 public class DyeBucketFluidHandler extends FluidBucketWrapper {
     public DyeBucketFluidHandler(ItemStack container) {

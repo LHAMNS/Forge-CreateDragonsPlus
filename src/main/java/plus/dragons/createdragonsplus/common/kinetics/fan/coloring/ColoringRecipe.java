@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,19 +19,20 @@
 
 package plus.dragons.createdragonsplus.common.kinetics.fan.coloring;
 
-import com.mojang.serialization.MapCodec;
+import com.google.gson.JsonObject;
 import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
 import com.simibubi.create.content.processing.recipe.ProcessingRecipeBuilder;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
+import com.simibubi.create.content.processing.recipe.ProcessingRecipeBuilder.ProcessingRecipeParams;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.Level;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
 
-public class ColoringRecipe extends ProcessingRecipe<ColoringRecipeInput, ColoringRecipeParams> {
-    public ColoringRecipe(ColoringRecipeParams params) {
+public class ColoringRecipe extends ProcessingRecipe<ColoringRecipeInput> {
+    private DyeColor color;
+
+    public ColoringRecipe(ProcessingRecipeParams params) {
         super(CDPRecipes.COLORING, params);
     }
 
@@ -38,13 +40,33 @@ public class ColoringRecipe extends ProcessingRecipe<ColoringRecipeInput, Colori
         return new Builder(id, color);
     }
 
+    public static class Builder extends ProcessingRecipeBuilder<ColoringRecipe> {
+        private final DyeColor color;
+
+        public Builder(ResourceLocation id, DyeColor color) {
+            super(ColoringRecipe::new, id);
+            this.color = color;
+        }
+
+        @Override
+        public ColoringRecipe build() {
+            ColoringRecipe recipe = super.build();
+            recipe.color = this.color;
+            return recipe;
+        }
+    }
+
     public DyeColor getColor() {
-        return params.color;
+        return color;
+    }
+
+    public void setColor(DyeColor color) {
+        this.color = color;
     }
 
     @Override
     public boolean matches(ColoringRecipeInput input, Level level) {
-        return params.color == input.color() && this.ingredients.getFirst().test(input.item());
+        return color == input.color() && this.ingredients.get(0).test(input.item());
     }
 
     @Override
@@ -57,40 +79,27 @@ public class ColoringRecipe extends ProcessingRecipe<ColoringRecipeInput, Colori
         return 12;
     }
 
-    public static class Builder extends ProcessingRecipeBuilder<ColoringRecipeParams, ColoringRecipe, Builder> {
-        protected Builder(ResourceLocation recipeId, DyeColor color) {
-            super(ColoringRecipe::new, recipeId);
-            this.params.color = color;
-        }
-
-        @Override
-        protected ColoringRecipeParams createParams() {
-            return new ColoringRecipeParams();
-        }
-
-        @Override
-        public Builder self() {
-            return this;
-        }
+    @Override
+    public void writeAdditional(FriendlyByteBuf buffer) {
+        super.writeAdditional(buffer);
+        buffer.writeEnum(color);
     }
 
-    public static class Serializer<R extends ColoringRecipe> implements RecipeSerializer<R> {
-        private final MapCodec<R> codec;
-        private final StreamCodec<RegistryFriendlyByteBuf, R> streamCodec;
+    @Override
+    public void readAdditional(FriendlyByteBuf buffer) {
+        super.readAdditional(buffer);
+        color = buffer.readEnum(DyeColor.class);
+    }
 
-        public Serializer(ProcessingRecipe.Factory<ColoringRecipeParams, R> factory) {
-            this.codec = ProcessingRecipe.codec(factory, ColoringRecipeParams.CODEC);
-            this.streamCodec = ProcessingRecipe.streamCodec(factory, ColoringRecipeParams.STREAM_CODEC);
-        }
+    @Override
+    public void writeAdditional(JsonObject json) {
+        super.writeAdditional(json);
+        json.addProperty("color", color.getSerializedName());
+    }
 
-        @Override
-        public MapCodec<R> codec() {
-            return codec;
-        }
-
-        @Override
-        public StreamCodec<RegistryFriendlyByteBuf, R> streamCodec() {
-            return streamCodec;
-        }
+    @Override
+    public void readAdditional(JsonObject json) {
+        super.readAdditional(json);
+        color = DyeColor.byName(json.get("color").getAsString(), DyeColor.WHITE);
     }
 }

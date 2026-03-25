@@ -22,15 +22,18 @@ import com.tterrag.registrate.AbstractRegistrate;
 import com.tterrag.registrate.builders.AbstractBuilder;
 import com.tterrag.registrate.builders.BuilderCallback;
 import java.util.function.Supplier;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 public class CustomStatBuilder<P> extends AbstractBuilder<ResourceLocation, ResourceLocation, P, CustomStatBuilder<P>> {
     private final Supplier<ResourceLocation> factory;
 
+    @SuppressWarnings("unchecked")
     public CustomStatBuilder(AbstractRegistrate<?> owner, P parent, String name, BuilderCallback callback, Supplier<ResourceLocation> factory) {
-        super(owner, parent, name, callback, BuiltInRegistries.CUSTOM_STAT.key());
+        super(owner, parent, name, callback, (ResourceKey<Registry<ResourceLocation>>) (ResourceKey<?>) Registries.CUSTOM_STAT);
         this.factory = factory;
     }
 

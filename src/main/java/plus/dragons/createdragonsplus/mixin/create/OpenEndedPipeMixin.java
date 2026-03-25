@@ -21,7 +21,7 @@ package plus.dragons.createdragonsplus.mixin.create;
 import com.simibubi.create.content.fluids.OpenEndedPipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -36,9 +36,9 @@ public class OpenEndedPipeMixin {
     @Shadow
     private BlockPos outputPos;
 
-    @Inject(method = "provideFluidToSpace", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/dimension/DimensionType;ultraWarm()Z"), cancellable = true)
+    @Inject(remap = false, method = "provideFluidToSpace", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/dimension/DimensionType;ultraWarm()Z"), cancellable = true)
     private void provideFluidToSpace$checkVaporize(FluidStack fluid, boolean simulate, CallbackInfoReturnable<Boolean> cir) {
-        var type = fluid.getFluidType();
+        var type = fluid.getFluid().getFluidType();
         if (world.dimensionType().ultraWarm() && type.isVaporizedOnPlacement(world, outputPos, fluid)) {
             type.onVaporize(null, world, outputPos, fluid);
             cir.setReturnValue(true);

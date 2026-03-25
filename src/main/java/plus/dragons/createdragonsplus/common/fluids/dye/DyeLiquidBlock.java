@@ -26,20 +26,21 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.FlowingFluid;
+import java.util.function.Supplier;
+import net.minecraftforge.fluids.ForgeFlowingFluid;
 import plus.dragons.createdragonsplus.common.registry.CDPFanProcessingTypes;
 import plus.dragons.createdragonsplus.mixin.create.FanProcessingAccessor;
 
 public class DyeLiquidBlock extends LiquidBlock {
     private final DyeColor color;
 
-    public DyeLiquidBlock(DyeColor color, FlowingFluid fluid, Properties properties) {
+    public DyeLiquidBlock(DyeColor color, Supplier<? extends ForgeFlowingFluid> fluid, Properties properties) {
         super(fluid, properties);
         this.color = color;
     }
 
     @Override
-    protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         var type = CDPFanProcessingTypes.COLORING.get(this.color).get();
         if (entity instanceof ItemEntity itemEntity) {
             FanProcessingAccessor.invokeApplyProcessing(itemEntity, type);

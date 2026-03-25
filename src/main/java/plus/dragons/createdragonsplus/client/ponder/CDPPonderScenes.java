@@ -31,7 +31,7 @@ import plus.dragons.createdragonsplus.integration.ModIntegration;
 
 public class CDPPonderScenes {
     public static void register(PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        var registration = helper.<ItemProviderEntry<?, ?>>withKeyFunction(RegistryEntry::getId);
+        var registration = helper.<ItemProviderEntry<?>>withKeyFunction(RegistryEntry::getId);
         registration.forComponents(AllBlocks.ENCASED_FAN)
                 .addStoryBoard("bulk_coloring", CDPFanScenes::bulkColoring)
                 .addStoryBoard("bulk_freezing", CDPFanScenes::bulkFreezing)
