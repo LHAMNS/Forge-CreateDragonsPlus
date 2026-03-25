@@ -43,7 +43,7 @@ public class AnimalRoostArmInteractionPoint extends ArmInteractionPoint {
     }
 
     @Override
-    public ItemStack insert(ArmBlockEntity armBlockEntity, ItemStack stack, boolean simulate) {
+    public ItemStack insert(ItemStack stack, boolean simulate) {
         if (stack.isEmpty())
             return ItemStack.EMPTY;
         if (level.getBlockEntity(pos) instanceof AnimalRoostBlockEntity coop && coop.feedItem(stack, simulate)) {
