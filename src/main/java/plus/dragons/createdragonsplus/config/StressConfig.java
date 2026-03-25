@@ -18,7 +18,7 @@
 
 package plus.dragons.createdragonsplus.config;
 
-import com.simibubi.create.api.stress.BlockStressValues;
+import com.simibubi.create.content.kinetics.BlockStressValues;
 import com.simibubi.create.infrastructure.config.CStress;
 import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
@@ -62,8 +62,7 @@ public class StressConfig extends ConfigBase {
         defaultCapacities.forEach((id, value) -> this.capacities.put(id, builder.define(id.getPath(), value)));
         builder.pop();
 
-        BlockStressValues.IMPACTS.registerProvider(this::getImpact);
-        BlockStressValues.CAPACITIES.registerProvider(this::getCapacity);
+        BlockStressValues.registerProvider(modid, this::getImpact, this::getCapacity);
     }
 
     @Override

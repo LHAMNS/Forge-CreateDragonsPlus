@@ -1,19 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Ported from NeoForge 1.21.1 to Forge 1.20.1
  */
 
 package plus.dragons.createdragonsplus.common.recipe;
@@ -25,13 +13,12 @@ import java.util.Map;
 import java.util.function.Function;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.EventBusSubscriber;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.event.AddReloadListenerEvent;
 
 @EventBusSubscriber
-public interface RecipeConverter<K extends Recipe<?>, V extends Recipe<?>> extends Function<RecipeHolder<K>, RecipeHolder<V>> {
+public interface RecipeConverter<K extends Recipe<?>, V extends Recipe<?>> extends Function<K, V> {
     Map<RecipeConverter<?, ?>, Runnable> CACHE_INVALIDATORS = new IdentityHashMap<>();
 
     @SubscribeEvent
@@ -40,9 +27,9 @@ public interface RecipeConverter<K extends Recipe<?>, V extends Recipe<?>> exten
     }
 
     static <K extends Recipe<?>, V extends Recipe<?>> RecipeConverter<K, V> cached(CacheBuilder<Object, Object> cacheBuilder, RecipeConverter<K, V> converter) {
-        var cache = cacheBuilder.build(new CacheLoader<RecipeHolder<K>, RecipeHolder<V>>() {
+        var cache = cacheBuilder.build(new CacheLoader<K, V>() {
             @Override
-            public RecipeHolder<V> load(RecipeHolder<K> key) {
+            public V load(K key) {
                 return converter.apply(key);
             }
         });

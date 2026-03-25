@@ -77,28 +77,31 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     // Conditional Mixin
-    implementation(jarJar("me.fallenbreath:conditional-mixin-forge:${conditional_mixin_version}")) {
-        jarJar.ranged(it, "[${conditional_mixin_version},)")
-    }
+    implementation fg.deobf("me.fallenbreath:conditional-mixin-forge:${conditional_mixin_version}")
 
     // Flywheel
-    compileOnlyApi("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
+    compileOnlyApi fg.deobf("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
 
     // Vanillin
-    runtimeOnly("dev.engine-room.vanillin:vanillin-forge-${minecraft_version}:${vanillin_version}")
+    runtimeOnly fg.deobf("dev.engine-room.vanillin:vanillin-forge-${minecraft_version}:${vanillin_version}")
 
     // Registrate
-    api("com.tterrag.registrate:Registrate:${registrate_version}")
+    api fg.deobf("com.tterrag.registrate:Registrate:${registrate_version}")
 
     // Ponder
-    api("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
+    api fg.deobf("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
 
     // Create
-    api("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive = false }
+    api(fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim")) { transitive = false }
 
     // JEI
-    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    compileOnly("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
+
+    // MixinExtras
+    compileOnly("io.github.llamalad7:mixinextras-common:0.3.5")
+    annotationProcessor("io.github.llamalad7:mixinextras-common:0.3.5")
+    implementation("io.github.llamalad7:mixinextras-forge:0.3.5")
 }
 
 jar {

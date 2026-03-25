@@ -18,7 +18,6 @@
 
 package plus.dragons.createdragonsplus.common.processing.blaze;
 
-import com.mojang.serialization.MapCodec;
 import com.simibubi.create.AllShapes;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
@@ -50,9 +49,6 @@ public abstract class BlazeBlock<T extends BlazeBlockEntity> extends HorizontalD
         super(properties);
         registerDefaultState(defaultBlockState().setValue(HEAT_LEVEL, HeatLevel.SMOULDERING));
     }
-
-    @Override
-    protected abstract MapCodec<? extends BlazeBlock<T>> codec();
 
     @Override
     protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {

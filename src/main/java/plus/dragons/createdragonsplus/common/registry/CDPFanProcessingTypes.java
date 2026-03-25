@@ -19,16 +19,14 @@
 package plus.dragons.createdragonsplus.common.registry;
 
 import com.google.common.collect.ImmutableMap;
-import com.simibubi.create.api.registry.CreateRegistries;
+import com.simibubi.create.content.kinetics.fan.processing.AllFanProcessingTypes;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
+import com.simibubi.create.content.kinetics.fan.processing.FanProcessingTypeRegistry;
 import java.util.Map;
 import java.util.function.Supplier;
 import net.minecraft.Util;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.RegistryObject;
-import net.minecraftforge.registries.DeferredRegister;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.fluids.dye.DyeColors;
 import plus.dragons.createdragonsplus.common.kinetics.fan.coloring.ColoringFanProcessingType;
@@ -37,26 +35,28 @@ import plus.dragons.createdragonsplus.common.kinetics.fan.freezing.FreezingFanPr
 import plus.dragons.createdragonsplus.common.kinetics.fan.sanding.SandingFanProcessingType;
 
 public class CDPFanProcessingTypes {
-    private static final DeferredRegister<FanProcessingType> TYPES = DeferredRegister
-            .create(CreateRegistries.FAN_PROCESSING_TYPE, CDPCommon.ID);
     public static final Map<DyeColor, Supplier<ColoringFanProcessingType>> COLORING = Util.make(() -> {
         var builder = ImmutableMap.<DyeColor, Supplier<ColoringFanProcessingType>>builder();
         for (var color : DyeColors.ALL) {
-            // In case there are modded DyeColor
-            var name = "coloring_" + ResourceLocation.parse(color.getName()).getPath();
-            var type = TYPES.register(name, () -> new ColoringFanProcessingType(color));
-            builder.put(color, type);
+            var name = "coloring_" + new ResourceLocation(color.getName()).getPath();
+            ColoringFanProcessingType type = new ColoringFanProcessingType(color);
+            FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, name), type);
+            builder.put(color, () -> type);
         }
         return builder.build();
     });
-    public static final RegistryObject<FanProcessingType, FreezingFanProcessingType> FREEZING = TYPES
-            .register("freezing", FreezingFanProcessingType::new);
-    public static final RegistryObject<FanProcessingType, SandingFanProcessingType> SANDING = TYPES
-            .register("sanding", SandingFanProcessingType::new);
-    public static final RegistryObject<FanProcessingType, EndingFanProcessingType> ENDING = TYPES
-            .register("ending", EndingFanProcessingType::new);
 
-    public static void register(IEventBus modBus) {
-        TYPES.register(modBus);
+    public static final FreezingFanProcessingType FREEZING_TYPE = new FreezingFanProcessingType();
+    public static final SandingFanProcessingType SANDING_TYPE = new SandingFanProcessingType();
+    public static final EndingFanProcessingType ENDING_TYPE = new EndingFanProcessingType();
+
+    public static final Supplier<FreezingFanProcessingType> FREEZING = () -> FREEZING_TYPE;
+    public static final Supplier<SandingFanProcessingType> SANDING = () -> SANDING_TYPE;
+    public static final Supplier<EndingFanProcessingType> ENDING = () -> ENDING_TYPE;
+
+    public static void register() {
+        FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, "freezing"), FREEZING_TYPE);
+        FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, "sanding"), SANDING_TYPE);
+        FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, "ending"), ENDING_TYPE);
     }
 }

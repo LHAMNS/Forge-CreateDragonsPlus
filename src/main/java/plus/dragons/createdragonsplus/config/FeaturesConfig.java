@@ -18,8 +18,7 @@
 
 package plus.dragons.createdragonsplus.config;
 
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.MapCodec;
+import com.google.gson.JsonObject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,11 +63,6 @@ public class FeaturesConfig extends ConfigBase {
     }
 
     public class ConfigFeature extends ConfigBool implements ICondition {
-        public static final MapCodec<ConfigFeature> CODEC = ResourceLocation.CODEC.comapFlatMap(
-                id -> FEATURES.containsKey(id)
-                        ? DataResult.success(FEATURES.get(id))
-                        : DataResult.error(() -> "No config features with id [" + id + "] exists"),
-                ConfigFeature::getId).fieldOf("feature");
         private final ResourceLocation id;
         private final @Nullable Boolean override;
 
@@ -96,13 +90,38 @@ public class FeaturesConfig extends ConfigBase {
         }
 
         @Override
-        public boolean test(IContext context) {
+        public boolean test(ICondition.IContext context) {
             return get();
         }
 
         @Override
-        public MapCodec<? extends ICondition> codec() {
-            return CODEC;
+        public ResourceLocation getID() {
+            return ConfigFeatureConditionSerializer.ID;
+        }
+    }
+
+    public static class ConfigFeatureConditionSerializer implements ICondition.IConditionSerializer<ConfigFeature> {
+        public static final ConfigFeatureConditionSerializer INSTANCE = new ConfigFeatureConditionSerializer();
+        public static final ResourceLocation ID = new ResourceLocation("create_dragons_plus", "config_feature");
+
+        @Override
+        public void write(JsonObject json, ConfigFeature value) {
+            json.addProperty("feature", value.getId().toString());
+        }
+
+        @Override
+        public ConfigFeature read(JsonObject json) {
+            ResourceLocation featureId = new ResourceLocation(json.get("feature").getAsString());
+            ConfigFeature feature = FEATURES.get(featureId);
+            if (feature == null) {
+                throw new IllegalStateException("No config feature with id [" + featureId + "] exists");
+            }
+            return feature;
+        }
+
+        @Override
+        public ResourceLocation getID() {
+            return ID;
         }
     }
 
