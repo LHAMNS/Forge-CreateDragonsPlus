@@ -26,15 +26,16 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
+import plus.dragons.createdragonsplus.common.CDPCommon;
 
 @SuppressWarnings("unchecked")
 public class RecipeTypeInfo<R extends Recipe<?>> implements IRecipeTypeInfo {
-    private final RegistryObject<RecipeSerializer<?>, RecipeSerializer<R>> serializer;
-    private final RegistryObject<RecipeType<?>, RecipeType<R>> type;
+    private final RegistryObject<RecipeSerializer<?>> serializer;
+    private final RegistryObject<RecipeType<?>> type;
 
-    public RecipeTypeInfo(String name, Supplier<? extends RecipeSerializer<R>> serializer, DeferredRegister<RecipeSerializer<?>> serializerRegister, DeferredRegister<RecipeType<?>> typeRegister) {
-        this.serializer = serializerRegister.register(name, serializer);
-        this.type = typeRegister.register(name, RecipeType::simple);
+    public RecipeTypeInfo(String name, Supplier<? extends RecipeSerializer<R>> serializerFactory, DeferredRegister<RecipeSerializer<?>> serializerRegister, DeferredRegister<RecipeType<?>> typeRegister) {
+        this.serializer = serializerRegister.register(name, serializerFactory::get);
+        this.type = typeRegister.register(name, () -> RecipeType.simple(new ResourceLocation(CDPCommon.ID, name)));
     }
 
     @Override
@@ -44,11 +45,11 @@ public class RecipeTypeInfo<R extends Recipe<?>> implements IRecipeTypeInfo {
 
     @Override
     public RecipeSerializer<R> getSerializer() {
-        return serializer.get();
+        return (RecipeSerializer<R>) serializer.get();
     }
 
     @Override
     public RecipeType<R> getType() {
-        return type.get();
+        return (RecipeType<R>) type.get();
     }
 }

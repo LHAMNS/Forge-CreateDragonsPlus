@@ -38,7 +38,7 @@ public class OpenEndedPipeMixin {
 
     @Inject(method = "provideFluidToSpace", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/dimension/DimensionType;ultraWarm()Z"), cancellable = true)
     private void provideFluidToSpace$checkVaporize(FluidStack fluid, boolean simulate, CallbackInfoReturnable<Boolean> cir) {
-        var type = fluid.getFluidType();
+        var type = fluid.getFluid().getFluidType();
         if (world.dimensionType().ultraWarm() && type.isVaporizedOnPlacement(world, outputPos, fluid)) {
             type.onVaporize(null, world, outputPos, fluid);
             cir.setReturnValue(true);

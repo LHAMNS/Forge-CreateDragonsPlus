@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * SPDX-License-Identifier: LGPL-3.0-or-later
  * Ported from NeoForge 1.21.1 to Forge 1.20.1
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 package plus.dragons.createdragonsplus.common.fluids.dye;
 
-import com.simibubi.create.content.fluids.OpenEndedPipe;
+import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -30,7 +30,7 @@ import net.minecraftforge.fluids.FluidStack;
 import plus.dragons.createdragonsplus.common.registry.CDPFanProcessingTypes;
 import plus.dragons.createdragonsplus.mixin.create.FanProcessingAccessor;
 
-public class DyeFluidOpenPipeEffect implements OpenEndedPipe.IEffectHandler {
+public class DyeFluidOpenPipeEffect implements OpenPipeEffectHandler {
     private final DyeColor color;
 
     public DyeFluidOpenPipeEffect(DyeColor color) {
@@ -38,9 +38,7 @@ public class DyeFluidOpenPipeEffect implements OpenEndedPipe.IEffectHandler {
     }
 
     @Override
-    public void applyEffects(OpenEndedPipe pipe, FluidStack fluid) {
-        Level level = pipe.getWorld();
-        AABB area = pipe.getAOE();
+    public void apply(Level level, AABB area, FluidStack fluid) {
         var type = CDPFanProcessingTypes.COLORING.get(this.color).get();
         var entities = level.getEntities((Entity) null, area,
                 entity -> entity instanceof ItemEntity || entity instanceof LivingEntity);

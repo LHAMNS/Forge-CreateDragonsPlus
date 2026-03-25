@@ -18,7 +18,7 @@
 
 package plus.dragons.createdragonsplus.config;
 
-import com.simibubi.create.content.kinetics.BlockStressValues;
+import com.simibubi.create.api.stress.BlockStressValues;
 import com.simibubi.create.infrastructure.config.CStress;
 import com.tterrag.registrate.builders.BlockBuilder;
 import com.tterrag.registrate.util.nullness.NonNullUnaryOperator;
@@ -28,11 +28,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.DoubleSupplier;
 import net.createmod.catnip.config.ConfigBase;
-import net.createmod.catnip.platform.services.RegisteredObjectsHelper;
+import net.createmod.catnip.platform.CatnipServices;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.ForgeConfigSpec.Builder;
 import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 import plus.dragons.createdragonsplus.util.CodeReference;
 
@@ -62,7 +63,19 @@ public class StressConfig extends ConfigBase {
         defaultCapacities.forEach((id, value) -> this.capacities.put(id, builder.define(id.getPath(), value)));
         builder.pop();
 
-        BlockStressValues.registerProvider(modid, this::getImpact, this::getCapacity);
+        // Register stress values via Create's SimpleRegistry API
+        defaultImpacts.forEach((id, value) -> {
+            Block block = ForgeRegistries.BLOCKS.getValue(id);
+            if (block != null) {
+                BlockStressValues.IMPACTS.register(block, () -> getImpactValue(id));
+            }
+        });
+        defaultCapacities.forEach((id, value) -> {
+            Block block = ForgeRegistries.BLOCKS.getValue(id);
+            if (block != null) {
+                BlockStressValues.CAPACITIES.register(block, () -> getCapacityValue(id));
+            }
+        });
     }
 
     @Override
@@ -70,14 +83,24 @@ public class StressConfig extends ConfigBase {
         return "stressValues.v" + getVersion();
     }
 
+    private double getImpactValue(ResourceLocation id) {
+        ConfigValue<Double> value = this.impacts.get(id);
+        return value == null ? 0 : value.get();
+    }
+
+    private double getCapacityValue(ResourceLocation id) {
+        ConfigValue<Double> value = this.capacities.get(id);
+        return value == null ? 0 : value.get();
+    }
+
     public @Nullable DoubleSupplier getImpact(Block block) {
-        ResourceLocation id = RegisteredObjectsHelper.getKeyOrThrow(block);
+        ResourceLocation id = CatnipServices.REGISTRIES.getKeyOrThrow(block);
         ConfigValue<Double> value = this.impacts.get(id);
         return value == null ? null : value::get;
     }
 
     public @Nullable DoubleSupplier getCapacity(Block block) {
-        ResourceLocation id = RegisteredObjectsHelper.getKeyOrThrow(block);
+        ResourceLocation id = CatnipServices.REGISTRIES.getKeyOrThrow(block);
         ConfigValue<Double> value = this.capacities.get(id);
         return value == null ? null : value::get;
     }

@@ -26,6 +26,7 @@ import net.createmod.catnip.config.ConfigBase;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -100,7 +101,7 @@ public class FeaturesConfig extends ConfigBase {
         }
     }
 
-    public static class ConfigFeatureConditionSerializer implements ICondition.IConditionSerializer<ConfigFeature> {
+    public static class ConfigFeatureConditionSerializer implements IConditionSerializer<ConfigFeature> {
         public static final ConfigFeatureConditionSerializer INSTANCE = new ConfigFeatureConditionSerializer();
         public static final ResourceLocation ID = new ResourceLocation("create_dragons_plus", "config_feature");
 

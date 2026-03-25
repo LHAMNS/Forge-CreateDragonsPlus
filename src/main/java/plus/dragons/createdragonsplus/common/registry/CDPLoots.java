@@ -29,21 +29,21 @@ import net.minecraft.world.level.storage.loot.entries.EmptyLootItem;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.EventBusSubscriber;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.event.LootTableLoadEvent;
 import plus.dragons.createdragonsplus.config.CDPConfig;
 
 public class CDPLoots {
-    @EventBusSubscriber
+    @Mod.EventBusSubscriber
     public static class TableInjections {
         public static final Object2IntMap<ResourceLocation> BLAZE_UPGRADE_SMITHING_TEMPLATE = Util.make(
                 new Object2IntOpenHashMap<>(),
                 map -> {
-                    map.put(BuiltInLootTables.BASTION_TREASURE.location(), 1);
-                    map.put(BuiltInLootTables.BASTION_OTHER.location(), 10);
-                    map.put(BuiltInLootTables.BASTION_BRIDGE.location(), 10);
-                    map.put(BuiltInLootTables.BASTION_HOGLIN_STABLE.location(), 10);
-                    map.put(BuiltInLootTables.NETHER_BRIDGE.location(), 10);
+                    map.put(BuiltInLootTables.BASTION_TREASURE, 1);
+                    map.put(BuiltInLootTables.BASTION_OTHER, 10);
+                    map.put(BuiltInLootTables.BASTION_BRIDGE, 10);
+                    map.put(BuiltInLootTables.BASTION_HOGLIN_STABLE, 10);
+                    map.put(BuiltInLootTables.NETHER_BRIDGE, 10);
                 });
 
         @SubscribeEvent

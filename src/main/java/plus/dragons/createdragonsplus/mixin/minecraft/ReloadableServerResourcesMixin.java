@@ -18,7 +18,6 @@
 
 package plus.dragons.createdragonsplus.mixin.minecraft;
 
-import com.google.common.collect.HashMultimap;
 import java.util.HashMap;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -39,8 +38,10 @@ public class ReloadableServerResourcesMixin {
 
     @Inject(method = "updateRegistryTags()V", at = @At("TAIL"))
     private void updateRegistryTags$postBeforeRecipeSyncEvent(CallbackInfo ci) {
-        var byType = HashMultimap.create(((RecipeManagerAccessor) this.recipes).getByType());
+        var byType = new HashMap<>(((RecipeManagerAccessor) this.recipes).getRecipes());
         var byName = new HashMap<>(((RecipeManagerAccessor) this.recipes).getByName());
-        MinecraftForge.EVENT_BUS.post(new UpdateRecipesEvent(recipes, byType, byName)).apply();
+        var event = new UpdateRecipesEvent(recipes, byType, byName);
+        MinecraftForge.EVENT_BUS.post(event);
+        event.apply();
     }
 }

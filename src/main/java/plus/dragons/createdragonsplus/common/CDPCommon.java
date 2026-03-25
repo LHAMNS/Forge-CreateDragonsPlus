@@ -61,7 +61,7 @@ public class CDPCommon {
         CDPCriterions.register(modBus);
         CDPRecipes.register(modBus);
         CDPConditions.register(modBus);
-        CDPFanProcessingTypes.register(modBus);
+        CDPFanProcessingTypes.register();
         modBus.register(this);
         CDPConfig.register(ModLoadingContext.get().getActiveContainer());
     }

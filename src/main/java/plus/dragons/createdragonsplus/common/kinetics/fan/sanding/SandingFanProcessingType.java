@@ -83,7 +83,7 @@ public class SandingFanProcessingType implements DynamicParticleFanProcessingTyp
         return recipeManager
                 .getRecipeFor(CDPRecipes.SANDING.getType(), wrapper, level)
                 .or(() -> recipeManager.getRecipeFor(AllRecipeTypes.SANDPAPER_POLISHING.getType(), wrapper, level))
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe, false))
                 .orElse(null);
     }
 

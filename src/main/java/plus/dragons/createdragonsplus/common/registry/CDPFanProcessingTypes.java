@@ -19,12 +19,11 @@
 package plus.dragons.createdragonsplus.common.registry;
 
 import com.google.common.collect.ImmutableMap;
-import com.simibubi.create.content.kinetics.fan.processing.AllFanProcessingTypes;
+import com.simibubi.create.api.registry.CreateBuiltInRegistries;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
-import com.simibubi.create.content.kinetics.fan.processing.FanProcessingTypeRegistry;
 import java.util.Map;
 import java.util.function.Supplier;
-import net.minecraft.Util;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
 import plus.dragons.createdragonsplus.common.CDPCommon;
@@ -35,16 +34,17 @@ import plus.dragons.createdragonsplus.common.kinetics.fan.freezing.FreezingFanPr
 import plus.dragons.createdragonsplus.common.kinetics.fan.sanding.SandingFanProcessingType;
 
 public class CDPFanProcessingTypes {
-    public static final Map<DyeColor, Supplier<ColoringFanProcessingType>> COLORING = Util.make(() -> {
+    public static final Map<DyeColor, Supplier<ColoringFanProcessingType>> COLORING;
+
+    static {
         var builder = ImmutableMap.<DyeColor, Supplier<ColoringFanProcessingType>>builder();
         for (var color : DyeColors.ALL) {
-            var name = "coloring_" + new ResourceLocation(color.getName()).getPath();
             ColoringFanProcessingType type = new ColoringFanProcessingType(color);
-            FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, name), type);
+            Registry.register(CreateBuiltInRegistries.FAN_PROCESSING_TYPE, new ResourceLocation(CDPCommon.ID, "coloring_" + color.getName()), type);
             builder.put(color, () -> type);
         }
-        return builder.build();
-    });
+        COLORING = builder.build();
+    }
 
     public static final FreezingFanProcessingType FREEZING_TYPE = new FreezingFanProcessingType();
     public static final SandingFanProcessingType SANDING_TYPE = new SandingFanProcessingType();
@@ -55,8 +55,8 @@ public class CDPFanProcessingTypes {
     public static final Supplier<EndingFanProcessingType> ENDING = () -> ENDING_TYPE;
 
     public static void register() {
-        FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, "freezing"), FREEZING_TYPE);
-        FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, "sanding"), SANDING_TYPE);
-        FanProcessingTypeRegistry.register(new ResourceLocation(CDPCommon.ID, "ending"), ENDING_TYPE);
+        Registry.register(CreateBuiltInRegistries.FAN_PROCESSING_TYPE, new ResourceLocation(CDPCommon.ID, "freezing"), FREEZING_TYPE);
+        Registry.register(CreateBuiltInRegistries.FAN_PROCESSING_TYPE, new ResourceLocation(CDPCommon.ID, "sanding"), SANDING_TYPE);
+        Registry.register(CreateBuiltInRegistries.FAN_PROCESSING_TYPE, new ResourceLocation(CDPCommon.ID, "ending"), ENDING_TYPE);
     }
 }

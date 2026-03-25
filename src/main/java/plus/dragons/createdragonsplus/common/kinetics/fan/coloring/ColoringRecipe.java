@@ -92,14 +92,14 @@ public class ColoringRecipe extends ProcessingRecipe<ColoringRecipeInput> {
     }
 
     @Override
-    public void writeExtra(JsonObject json) {
-        super.writeExtra(json);
+    public void writeAdditional(JsonObject json) {
+        super.writeAdditional(json);
         json.addProperty("color", color.getSerializedName());
     }
 
     @Override
-    public void readExtra(JsonObject json) {
-        super.readExtra(json);
+    public void readAdditional(JsonObject json) {
+        super.readAdditional(json);
         color = DyeColor.byName(json.get("color").getAsString(), DyeColor.WHITE);
     }
 }

@@ -72,7 +72,7 @@ public class FreezingFanProcessingType implements FanProcessingType {
         RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
                 .getRecipeFor(CDPRecipes.FREEZING.getType(), wrapper, level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe, false))
                 .orElse(null);
     }
 

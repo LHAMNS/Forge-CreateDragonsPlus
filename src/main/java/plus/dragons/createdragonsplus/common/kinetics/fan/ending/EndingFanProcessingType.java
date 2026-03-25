@@ -77,7 +77,7 @@ public class EndingFanProcessingType implements FanProcessingType {
         RecipeWrapper wrapper = createSingleItemWrapper(stack);
         return level.getRecipeManager()
                 .getRecipeFor(CDPRecipes.ENDING.getType(), wrapper, level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe, false))
                 .orElse(null);
     }
 

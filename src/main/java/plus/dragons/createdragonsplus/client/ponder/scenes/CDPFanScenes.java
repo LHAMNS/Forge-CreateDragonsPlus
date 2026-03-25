@@ -39,9 +39,9 @@ import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.DyeableLeatherItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.phys.Vec3;
 import plus.dragons.createdragonsplus.common.registry.CDPFluids;
@@ -163,7 +163,8 @@ public class CDPFanScenes {
             };
             for (var slot : slots) {
                 var armor = as.getItemBySlot(slot);
-                var dyedArmor = DyedItemColor.applyDyes(armor, List.of(DyeItem.byColor(DyeColor.LIME)));
+                var dyedArmor = armor.copy();
+                DyeableLeatherItem.dyeArmor(dyedArmor, List.of(DyeItem.byColor(DyeColor.LIME)));
                 as.setItemSlot(slot, dyedArmor);
             }
         });

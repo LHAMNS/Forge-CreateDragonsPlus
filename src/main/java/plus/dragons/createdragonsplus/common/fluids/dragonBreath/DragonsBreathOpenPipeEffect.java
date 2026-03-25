@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * SPDX-License-Identifier: LGPL-3.0-or-later
  * Ported from NeoForge 1.21.1 to Forge 1.20.1
+ * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 package plus.dragons.createdragonsplus.common.fluids.dragonBreath;
 
-import com.simibubi.create.content.fluids.OpenEndedPipe;
+import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import java.util.List;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -28,11 +28,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.fluids.FluidStack;
 
-public class DragonsBreathOpenPipeEffect implements OpenEndedPipe.IEffectHandler {
+public class DragonsBreathOpenPipeEffect implements OpenPipeEffectHandler {
     @Override
-    public void applyEffects(OpenEndedPipe pipe, FluidStack fluid) {
-        Level level = pipe.getWorld();
-        AABB area = pipe.getAOE();
+    public void apply(Level level, AABB area, FluidStack fluid) {
         if (level.getGameTime() % 5 != 0)
             return;
         List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, area, LivingEntity::isAffectedByPotions);

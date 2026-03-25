@@ -22,7 +22,7 @@ package plus.dragons.createdragonsplus.common.registry;
 
 import static plus.dragons.createdragonsplus.common.CDPCommon.REGISTRATE;
 
-import com.simibubi.create.content.fluids.OpenEndedPipe;
+import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.content.processing.recipe.HeatCondition;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateTagsProvider.IntrinsicImpl;
@@ -144,7 +144,8 @@ public class CDPFluids {
     private static FluidEntry<ForgeFlowingFluid.Flowing> dye(DyeColor color) {
         var stillTexture = REGISTRATE.asResource("fluid/dye_still");
         var flowingTexture = REGISTRATE.asResource("fluid/dye_flow");
-        var tintColor = 0xFF000000 | color.getTextureDiffuseColor();
+        float[] diffuse = color.getTextureDiffuseColors();
+        var tintColor = 0xFF000000 | (((int)(diffuse[0] * 255) & 0xFF) << 16) | (((int)(diffuse[1] * 255) & 0xFF) << 8) | ((int)(diffuse[2] * 255) & 0xFF);
         var name = color.getName() + "_dye";
         var tag = COMMON_TAGS.dyesByColor.get(color);
         return REGISTRATE.fluid(name, stillTexture, flowingTexture, DyeFluidType.create(color))

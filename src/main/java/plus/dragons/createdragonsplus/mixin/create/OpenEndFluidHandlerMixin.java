@@ -22,6 +22,7 @@ package plus.dragons.createdragonsplus.mixin.create;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
+import com.simibubi.create.api.effect.OpenPipeEffectHandler;
 import com.simibubi.create.content.fluids.OpenEndedPipe;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
@@ -45,13 +46,13 @@ public abstract class OpenEndFluidHandlerMixin extends FluidTank {
     }
 
     @WrapOperation(method = "fill", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/foundation/fluid/FluidHelper;copyStackWithAmount(Lnet/minecraftforge/fluids/FluidStack;I)Lnet/minecraftforge/fluids/FluidStack;"))
-    private FluidStack fill$copyStack(FluidStack resource, int amount, Operation<FluidStack> original, @Local OpenEndedPipe.IEffectHandler handler) {
+    private FluidStack fill$copyStack(FluidStack resource, int amount, Operation<FluidStack> original, @Local OpenPipeEffectHandler handler) {
         if (handler instanceof ConsumingOpenPipeEffectHandler) return resource.copy();
         return original.call(resource, amount);
     }
 
     @Inject(method = "fill", at = @At("TAIL"))
-    private void fill$applyConsumingEffect(FluidStack resource, FluidAction action, CallbackInfoReturnable<Integer> cir, @Local OpenEndedPipe.IEffectHandler handler) {
+    private void fill$applyConsumingEffect(FluidStack resource, FluidAction action, CallbackInfoReturnable<Integer> cir, @Local OpenPipeEffectHandler handler) {
         if (handler instanceof ConsumingOpenPipeEffectHandler) {
             FluidStack remainder = ConsumingOpenPipeEffectHandler.getRemainder((ConsumingOpenPipeEffectHandler) handler, this$0, this.getFluid());
             this.setFluid(remainder);

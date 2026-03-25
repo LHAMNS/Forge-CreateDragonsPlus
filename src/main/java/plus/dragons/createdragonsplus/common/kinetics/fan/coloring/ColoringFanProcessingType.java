@@ -24,7 +24,7 @@ import static plus.dragons.createdragonsplus.common.CDPCommon.PERSISTENT_DATA_KE
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
 import com.simibubi.create.foundation.item.ItemHelper;
 import com.simibubi.create.foundation.recipe.RecipeApplier;
-import com.simibubi.create.foundation.utility.Color;
+import net.createmod.catnip.theme.Color;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import java.util.List;
 import java.util.Optional;
@@ -70,7 +70,8 @@ public class ColoringFanProcessingType implements FanProcessingType {
 
     public ColoringFanProcessingType(DyeColor color) {
         this.color = color;
-        this.rgb = new Color(this.color.getTextureDiffuseColor()).asVectorF();
+        float[] diffuse = this.color.getTextureDiffuseColors();
+        this.rgb = new Vector3f(diffuse[0], diffuse[1], diffuse[2]);
     }
 
     @Override
@@ -112,7 +113,7 @@ public class ColoringFanProcessingType implements FanProcessingType {
     public @Nullable List<ItemStack> process(ItemStack stack, Level level) {
         return level.getRecipeManager()
                 .getRecipeFor(CDPRecipes.COLORING.getType(), new ColoringRecipeInput(this.color, stack), level)
-                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe))
+                .map(recipe -> RecipeApplier.applyRecipeOn(level, stack, recipe, false))
                 .or(() -> processByCrafting(stack, level)
                         .map(result -> ItemHelper.multipliedOutput(stack, result)))
                 .orElse(null);
@@ -131,7 +132,8 @@ public class ColoringFanProcessingType implements FanProcessingType {
 
     @Override
     public void morphAirFlow(AirFlowParticleAccess particleAccess, RandomSource random) {
-        particleAccess.setColor(this.color.getTextureDiffuseColor());
+        float[] diffuse = this.color.getTextureDiffuseColors();
+        particleAccess.setColor(new Color(diffuse[0], diffuse[1], diffuse[2]).getRGB());
         particleAccess.setAlpha(1f);
     }
 
@@ -184,7 +186,7 @@ public class ColoringFanProcessingType implements FanProcessingType {
             if (entity instanceof Sheep sheep) {
                 sheep.setColor(this.color);
             } else if (entity instanceof Shulker shulker) {
-                shulker.getEntityData().set(Shulker.DATA_COLOR_ID, (byte) this.color.getId());
+                shulker.setVariant(java.util.Optional.of(this.color));
             } else if (entity instanceof Cat cat) {
                 cat.setCollarColor(this.color);
             } else if (entity instanceof Wolf wolf) {

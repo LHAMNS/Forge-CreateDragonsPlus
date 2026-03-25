@@ -18,13 +18,12 @@
 
 package plus.dragons.createdragonsplus.common.registry;
 
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.CapabilityManager;
+import net.minecraftforge.common.capabilities.CapabilityToken;
+import plus.dragons.createdragonsplus.common.behaviours.BehaviourProvider;
 
-public class CDPCriterions {
-    // Criterion triggers removed during port - StatTrigger and related classes
-    // are not available for Forge 1.20.1
-
-    public static void register(IEventBus modBus) {
-        // No-op: criterion triggers not yet ported to Forge 1.20.1
-    }
+public class CDPCapabilities {
+    public static final Capability<BehaviourProvider> BEHAVIOUR_PROVIDER =
+            CapabilityManager.get(new CapabilityToken<>() {});
 }

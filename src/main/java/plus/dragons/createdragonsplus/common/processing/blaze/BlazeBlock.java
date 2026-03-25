@@ -84,7 +84,7 @@ public abstract class BlazeBlock<T extends BlazeBlockEntity> extends HorizontalD
     }
 
     @Override
-    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+    public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType pathComputationType) {
         return false;
     }
 
