@@ -19,7 +19,7 @@
 
 package plus.dragons.createdragonsplus.common.processing.freeze;
 
-import com.simibubi.create.foundation.utility.Lang;
+import net.createmod.catnip.lang.Lang;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringRepresentable;
 import plus.dragons.createdragonsplus.data.internal.CDPLang;
