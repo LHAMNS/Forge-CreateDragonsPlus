@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +18,16 @@
 
 package plus.dragons.createdragonsplus.util;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.stats.Stat;
 import net.minecraft.stats.StatType;
 
 public class CDPCodecs {
-    public static final Codec<Stat<?>> STAT = BuiltInRegistries.STAT_TYPE.byNameCodec()
-            .dispatch(Stat::getType, CDPCodecs::stat);
+    public static final MapCodec<Stat<?>> STAT = BuiltInRegistries.STAT_TYPE.byNameCodec()
+            .dispatchMap(Stat::getType, CDPCodecs::stat);
 
-    public static <T> Codec<Stat<T>> stat(StatType<T> type) {
-        return type.getRegistry().byNameCodec().xmap(type::get, Stat::getValue);
+    public static <T> MapCodec<Stat<T>> stat(StatType<T> type) {
+        return type.getRegistry().byNameCodec().xmap(type::get, Stat::getValue).fieldOf("value");
     }
 }

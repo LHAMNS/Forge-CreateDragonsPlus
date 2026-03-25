@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +18,25 @@
 
 package plus.dragons.createdragonsplus.integration;
 
+import com.simibubi.create.api.registry.CreateRegistries;
+import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
+import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.crafting.conditions.ModLoadedCondition;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.common.conditions.ModLoadedCondition;
+import net.minecraftforge.registries.RegistryObject;
 
 public enum ModIntegration {
+    //TODO: Keep an eye on Create Garnished 2. Wait it add back Fan Processing
     CREATE_GARNISHED(Constants.CREATE_GARNISHED),
     CREATE_DND(Constants.CREATE_DND),
     QUICKSAND(Constants.QUICKSAND);
+    ;
 
     private final String id;
 
@@ -63,5 +71,13 @@ public enum ModIntegration {
         public static final String CREATE_GARNISHED = "garnished";
         public static final String CREATE_DND = "dndesires";
         public static final String QUICKSAND = "quicksand";
+    }
+
+    public RegistryObject<FanProcessingType, FanProcessingType> fanType(String path) {
+        return DeferredHolder.create(CreateRegistries.FAN_PROCESSING_TYPE, asResource(path));
+    }
+
+    public RegistryObject<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> recipeType(String path) {
+        return DeferredHolder.create(Registries.RECIPE_TYPE, asResource(path));
     }
 }

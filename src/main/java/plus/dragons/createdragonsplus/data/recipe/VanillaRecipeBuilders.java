@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +18,11 @@
 
 package plus.dragons.createdragonsplus.data.recipe;
 
-import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.BlastingRecipe;
+import net.minecraft.world.item.crafting.CampfireCookingRecipe;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
+import net.minecraft.world.item.crafting.SmokingRecipe;
+import net.minecraft.world.item.crafting.StonecutterRecipe;
 
 public class VanillaRecipeBuilders {
     public static ShapedRecipeBuilder shaped() {
@@ -31,22 +34,22 @@ public class VanillaRecipeBuilders {
     }
 
     public static SingleItemRecipeBuilder stonecutting() {
-        return new SingleItemRecipeBuilder("stonecutting", RecipeSerializer.STONECUTTER);
+        return new SingleItemRecipeBuilder("stonecutting", StonecutterRecipe::new);
     }
 
-    public static CookingRecipeBuilder<?> smelting() {
-        return new CookingRecipeBuilder<>("smelting", RecipeSerializer.SMELTING_RECIPE, 200);
+    public static CookingRecipeBuilder<SmeltingRecipe> smelting() {
+        return new CookingRecipeBuilder<>("smelting", SmeltingRecipe::new, 200);
     }
 
-    public static CookingRecipeBuilder<?> blasting() {
-        return new CookingRecipeBuilder<>("blasting", RecipeSerializer.BLASTING_RECIPE, 100);
+    public static CookingRecipeBuilder<BlastingRecipe> blasting() {
+        return new CookingRecipeBuilder<>("blasting", BlastingRecipe::new, 100);
     }
 
-    public static CookingRecipeBuilder<?> smoking() {
-        return new CookingRecipeBuilder<>("smoking", RecipeSerializer.SMOKING_RECIPE, 100);
+    public static CookingRecipeBuilder<SmokingRecipe> smoking() {
+        return new CookingRecipeBuilder<>("smoking", SmokingRecipe::new, 100);
     }
 
-    public static CookingRecipeBuilder<?> campfire() {
-        return new CookingRecipeBuilder<>("smoking", RecipeSerializer.CAMPFIRE_COOKING_RECIPE, 600);
+    public static CookingRecipeBuilder<CampfireCookingRecipe> campfire() {
+        return new CookingRecipeBuilder<>("smoking", CampfireCookingRecipe::new, 600);
     }
 }

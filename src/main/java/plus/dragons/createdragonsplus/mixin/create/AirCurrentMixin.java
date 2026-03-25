@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,11 +27,11 @@ import com.simibubi.create.content.kinetics.fan.IAirCurrentSource;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;
 import java.util.List;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SkullBlock;
 import net.minecraft.world.level.block.WallSkullBlock;
+import net.minecraft.world.level.block.state.properties.RotationSegment;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
@@ -60,25 +59,12 @@ public class AirCurrentMixin implements AirCurrentAccess {
     @Shadow
     public boolean pushing;
 
-    @Unique
-    @Nullable
-    private static Direction createDragonsPlus$rotationToDirection(int rotation) {
-        switch (rotation) {
-            case 0: return Direction.SOUTH;
-            case 4: return Direction.WEST;
-            case 8: return Direction.NORTH;
-            case 12: return Direction.EAST;
-            default: return null;
-        }
-    }
-
     @ModifyExpressionValue(method = "rebuild", at = @At(value = "INVOKE", target = "Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;getAt(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;)Lcom/simibubi/create/content/kinetics/fan/processing/FanProcessingType;"))
     private @Nullable FanProcessingType rebuild$checkDragonHead(@Nullable FanProcessingType original, @Local(name = "world") Level world, @Local(name = "currentPos") BlockPos currentPos) {
         var state = world.getBlockState(currentPos);
         var direction = source.getAirFlowDirection();
         if (state.is(Blocks.DRAGON_HEAD)) {
-            Direction facing = createDragonsPlus$rotationToDirection(state.getValue(SkullBlock.ROTATION));
-            if (facing == null) facing = direction;
+            var facing = RotationSegment.convertToDirection(state.getValue(SkullBlock.ROTATION)).orElse(direction);
             if (direction == facing)
                 return CDPFanProcessingTypes.ENDING.get();
         } else if (state.is(Blocks.DRAGON_WALL_HEAD) && state.getValue(WallSkullBlock.FACING) == direction) {

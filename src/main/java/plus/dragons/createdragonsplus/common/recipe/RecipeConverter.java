@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,12 +25,13 @@ import java.util.Map;
 import java.util.function.Function;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
+import net.minecraftforge.fml.common.EventBusSubscriber;
+import net.minecraftforge.event.AddReloadListenerEvent;
 
 @EventBusSubscriber
-public interface RecipeConverter<K extends Recipe<?>, V extends Recipe<?>> extends Function<K, V> {
+public interface RecipeConverter<K extends Recipe<?>, V extends Recipe<?>> extends Function<RecipeHolder<K>, RecipeHolder<V>> {
     Map<RecipeConverter<?, ?>, Runnable> CACHE_INVALIDATORS = new IdentityHashMap<>();
 
     @SubscribeEvent
@@ -40,9 +40,9 @@ public interface RecipeConverter<K extends Recipe<?>, V extends Recipe<?>> exten
     }
 
     static <K extends Recipe<?>, V extends Recipe<?>> RecipeConverter<K, V> cached(CacheBuilder<Object, Object> cacheBuilder, RecipeConverter<K, V> converter) {
-        var cache = cacheBuilder.build(new CacheLoader<K, V>() {
+        var cache = cacheBuilder.build(new CacheLoader<RecipeHolder<K>, RecipeHolder<V>>() {
             @Override
-            public V load(K key) {
+            public RecipeHolder<V> load(RecipeHolder<K> key) {
                 return converter.apply(key);
             }
         });

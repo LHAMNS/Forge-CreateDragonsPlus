@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,12 +25,13 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.fluid.SmartFluidTankBehaviour;
 import com.simibubi.create.foundation.fluid.CombinedTankWrapper;
 import com.simibubi.create.foundation.fluid.SmartFluidTank;
-import com.simibubi.create.foundation.utility.NBTHelper;
-import com.simibubi.create.foundation.utility.animation.LerpedFloat;
-import com.simibubi.create.foundation.utility.animation.LerpedFloat.Chaser;
 import java.util.List;
 import java.util.function.Consumer;
+import net.createmod.catnip.animation.LerpedFloat;
+import net.createmod.catnip.animation.LerpedFloat.Chaser;
+import net.createmod.catnip.nbt.NBTHelper;
 import net.minecraft.Util;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -135,6 +135,9 @@ public class FluidTankBehaviour extends BlockEntityBehaviour {
     @Override
     public void unload() {
         super.unload();
+        var level = blockEntity.getLevel();
+        assert level != null;
+        level.invalidateCapabilities(getPos());
     }
 
     public SmartFluidTank getPrimaryHandler() {
@@ -176,21 +179,21 @@ public class FluidTankBehaviour extends BlockEntityBehaviour {
     }
 
     @Override
-    public void write(CompoundTag nbt, boolean clientPacket) {
-        super.write(nbt, clientPacket);
+    public void write(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket) {
+        super.write(nbt, registries, clientPacket);
         ListTag tanksNBT = new ListTag();
-        forEach(segment -> tanksNBT.add(segment.writeNBT()));
+        forEach(segment -> tanksNBT.add(segment.writeNBT(registries)));
         nbt.put(getType().getName() + "Tanks", tanksNBT);
     }
 
     @Override
-    public void read(CompoundTag nbt, boolean clientPacket) {
-        super.read(nbt, clientPacket);
+    public void read(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket) {
+        super.read(nbt, registries, clientPacket);
         MutableInt index = new MutableInt(0);
         NBTHelper.iterateCompoundList(nbt.getList(getType().getName() + "Tanks", Tag.TAG_COMPOUND), tank -> {
             if (index.intValue() >= tanks.length)
                 return;
-            tanks[index.intValue()].readNBT(tank, clientPacket);
+            tanks[index.intValue()].readNBT(tank, registries, clientPacket);
             index.increment();
         });
     }
@@ -235,15 +238,15 @@ public class FluidTankBehaviour extends BlockEntityBehaviour {
             return fluidLevel.getValue(partialTicks) * tank.getCapacity();
         }
 
-        public CompoundTag writeNBT() {
+        public CompoundTag writeNBT(HolderLookup.Provider registries) {
             CompoundTag compound = new CompoundTag();
-            compound.put("TankContent", tank.writeToNBT(new CompoundTag()));
+            compound.put("TankContent", tank.writeToNBT(registries, new CompoundTag()));
             compound.put("Level", fluidLevel.writeNBT());
             return compound;
         }
 
-        public void readNBT(CompoundTag compound, boolean clientPacket) {
-            tank.readFromNBT(compound.getCompound("TankContent"));
+        public void readNBT(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
+            tank.readFromNBT(registries, compound.getCompound("TankContent"));
             fluidLevel.readNBT(compound.getCompound("Level"), clientPacket);
             if (!tank.getFluid().isEmpty())
                 renderedFluid = tank.getFluid();

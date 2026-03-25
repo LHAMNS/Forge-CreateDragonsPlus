@@ -14,20 +14,18 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  */
 
 package plus.dragons.createdragonsplus.common.registry;
 
-import com.simibubi.create.content.processing.recipe.ProcessingRecipeSerializer;
+import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import java.util.function.Supplier;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.kinetics.fan.coloring.ColoringRecipe;
 import plus.dragons.createdragonsplus.common.kinetics.fan.ending.EndingRecipe;
@@ -36,13 +34,13 @@ import plus.dragons.createdragonsplus.common.kinetics.fan.sanding.SandingRecipe;
 import plus.dragons.createdragonsplus.common.recipe.RecipeTypeInfo;
 
 public class CDPRecipes {
-    private static final DeferredRegister<RecipeType<?>> TYPES = DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, CDPCommon.ID);
-    private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, CDPCommon.ID);
+    private static final DeferredRegister<RecipeType<?>> TYPES = DeferredRegister.create(BuiltInRegistries.RECIPE_TYPE, CDPCommon.ID);
+    private static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS = DeferredRegister.create(BuiltInRegistries.RECIPE_SERIALIZER, CDPCommon.ID);
 
-    public static final RecipeTypeInfo<ColoringRecipe> COLORING = register("coloring", () -> new ProcessingRecipeSerializer<>(ColoringRecipe::new));
-    public static final RecipeTypeInfo<FreezingRecipe> FREEZING = register("freezing", () -> new ProcessingRecipeSerializer<>(FreezingRecipe::new));
-    public static final RecipeTypeInfo<SandingRecipe> SANDING = register("sanding", () -> new ProcessingRecipeSerializer<>(SandingRecipe::new));
-    public static final RecipeTypeInfo<EndingRecipe> ENDING = register("ending", () -> new ProcessingRecipeSerializer<>(EndingRecipe::new));
+    public static final RecipeTypeInfo<ColoringRecipe> COLORING = register("coloring", () -> new ColoringRecipe.Serializer<>(ColoringRecipe::new));
+    public static final RecipeTypeInfo<FreezingRecipe> FREEZING = register("freezing", () -> new StandardProcessingRecipe.Serializer<>(FreezingRecipe::new));
+    public static final RecipeTypeInfo<SandingRecipe> SANDING = register("sanding", () -> new StandardProcessingRecipe.Serializer<>(SandingRecipe::new));
+    public static final RecipeTypeInfo<EndingRecipe> ENDING = register("ending", () -> new StandardProcessingRecipe.Serializer<>(EndingRecipe::new));
 
     public static void register(IEventBus modBus) {
         TYPES.register(modBus);

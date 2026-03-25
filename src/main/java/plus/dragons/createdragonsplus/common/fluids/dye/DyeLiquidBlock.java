@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +18,6 @@
 
 package plus.dragons.createdragonsplus.common.fluids.dye;
 
-import java.util.function.Supplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -35,13 +33,13 @@ import plus.dragons.createdragonsplus.mixin.create.FanProcessingAccessor;
 public class DyeLiquidBlock extends LiquidBlock {
     private final DyeColor color;
 
-    public DyeLiquidBlock(DyeColor color, Supplier<? extends FlowingFluid> fluid, Properties properties) {
+    public DyeLiquidBlock(DyeColor color, FlowingFluid fluid, Properties properties) {
         super(fluid, properties);
         this.color = color;
     }
 
     @Override
-    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+    protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         var type = CDPFanProcessingTypes.COLORING.get(this.color).get();
         if (entity instanceof ItemEntity itemEntity) {
             FanProcessingAccessor.invokeApplyProcessing(itemEntity, type);

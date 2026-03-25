@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,8 +18,12 @@
 
 package plus.dragons.createdragonsplus.common.processing.freeze;
 
-import com.simibubi.create.foundation.utility.Lang;
+import com.mojang.serialization.Codec;
+import io.netty.buffer.ByteBuf;
+import net.createmod.catnip.codecs.stream.CatnipStreamCodecBuilders;
+import net.createmod.catnip.lang.Lang;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.util.StringRepresentable;
 import plus.dragons.createdragonsplus.data.internal.CDPLang;
 
@@ -29,6 +32,8 @@ public enum FreezeCondition implements StringRepresentable {
     FROZEN(0x8ADCE8),
     SUPERFROZEN(0x5C93E8);
 
+    public static final Codec<FreezeCondition> CODEC = StringRepresentable.fromEnum(FreezeCondition::values);
+    public static final StreamCodec<ByteBuf, FreezeCondition> STREAM_CODEC = CatnipStreamCodecBuilders.ofEnum(FreezeCondition.class);
     private final int color;
 
     FreezeCondition(int color) {

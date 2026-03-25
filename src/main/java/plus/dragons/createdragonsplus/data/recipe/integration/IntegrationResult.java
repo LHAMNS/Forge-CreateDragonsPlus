@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,40 +18,23 @@
 
 package plus.dragons.createdragonsplus.data.recipe.integration;
 
-import com.google.gson.JsonObject;
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.Nullable;
 
-public class IntegrationResult {
-    private final ItemStack delegate;
-    private final ResourceLocation id;
-
-    public IntegrationResult(ItemStack delegate, ResourceLocation id) {
-        this.delegate = delegate;
-        this.id = id;
-    }
-
-    public ItemStack delegate() {
-        return delegate;
-    }
-
-    public ResourceLocation id() {
-        return id;
-    }
-
-    public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.addProperty("id", id.toString());
-        int count = Math.max(delegate.getCount(), 1);
-        if (count > 1) {
-            json.addProperty("count", count);
-        }
-        @Nullable CompoundTag tag = delegate.getTag();
-        if (tag != null && !tag.isEmpty()) {
-            json.addProperty("nbt", tag.toString());
-        }
-        return json;
-    }
+public record IntegrationResult(ItemStack delegate, ResourceLocation id) {
+    public static Codec<IntegrationResult> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            ResourceLocation.CODEC.fieldOf("id")
+                    .forGetter(IntegrationResult::id),
+            ExtraCodecs.intRange(1, 99).fieldOf("count").orElse(1)
+                    .forGetter(result -> Math.max(result.delegate.getCount(), 1)),
+            DataComponentPatch.CODEC
+                    .optionalFieldOf("components", DataComponentPatch.EMPTY)
+                    .forGetter(result -> result.delegate.getComponentsPatch()))
+            .apply(instance, (id, count, components) -> {
+                throw new UnsupportedOperationException("Can not decode with encode-only codec");
+            }));
 }

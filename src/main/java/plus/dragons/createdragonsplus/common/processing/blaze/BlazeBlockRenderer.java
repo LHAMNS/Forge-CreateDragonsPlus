@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +18,6 @@
 
 package plus.dragons.createdragonsplus.common.processing.blaze;
 
-import com.jozufozu.flywheel.core.PartialModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.simibubi.create.AllPartialModels;
@@ -27,11 +25,12 @@ import com.simibubi.create.AllSpriteShifts;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
 import com.simibubi.create.content.processing.burner.BlazeBurnerRenderer;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
-import com.simibubi.create.foundation.render.CachedBufferer;
-import com.simibubi.create.foundation.render.SuperByteBuffer;
-import com.simibubi.create.foundation.utility.AngleHelper;
-import com.simibubi.create.foundation.utility.AnimationTickHolder;
-import com.simibubi.create.foundation.render.SpriteShiftEntry;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
+import net.createmod.catnip.animation.AnimationTickHolder;
+import net.createmod.catnip.math.AngleHelper;
+import net.createmod.catnip.render.CachedBuffers;
+import net.createmod.catnip.render.SpriteShiftEntry;
+import net.createmod.catnip.render.SuperByteBuffer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -79,7 +78,7 @@ public class BlazeBlockRenderer<T extends BlazeBlockEntity> extends SafeBlockEnt
             int light, int overlay, int seed,
             float animation, float horizontalAngle, float headY,
             PartialModel blazeModel, PartialModel gogglesModel) {
-        SuperByteBuffer gogglesBuffer = CachedBufferer.partial(gogglesModel, blockState);
+        SuperByteBuffer gogglesBuffer = CachedBuffers.partial(gogglesModel, blockState);
         if (transformStack != null)
             gogglesBuffer.transform(transformStack);
         gogglesBuffer.translate(0, headY + .5f, 0);
@@ -93,7 +92,7 @@ public class BlazeBlockRenderer<T extends BlazeBlockEntity> extends SafeBlockEnt
             int light, int overlay, int seed,
             float animation, float horizontalAngle, float headY,
             PartialModel blazeModel, PartialModel hatModel) {
-        SuperByteBuffer hatBuffer = CachedBufferer.partial(hatModel, blockState);
+        SuperByteBuffer hatBuffer = CachedBuffers.partial(hatModel, blockState);
         if (transformStack != null)
             hatBuffer.transform(transformStack);
         hatBuffer.translate(0f, headY + .75f, 0f);
@@ -116,7 +115,7 @@ public class BlazeBlockRenderer<T extends BlazeBlockEntity> extends SafeBlockEnt
 
         poseStack.pushPose();
         // Blaze Head
-        SuperByteBuffer blazeBuffer = CachedBufferer.partial(blazeModel, blockState);
+        SuperByteBuffer blazeBuffer = CachedBuffers.partial(blazeModel, blockState);
         if (transformStack != null)
             blazeBuffer.transform(transformStack);
         blazeBuffer.translate(0, headY, 0);
@@ -144,14 +143,14 @@ public class BlazeBlockRenderer<T extends BlazeBlockEntity> extends SafeBlockEnt
             PartialModel rodsModel2 = heatLevel == HeatLevel.SEETHING ? AllPartialModels.BLAZE_BURNER_SUPER_RODS_2
                     : AllPartialModels.BLAZE_BURNER_RODS_2;
 
-            SuperByteBuffer rodsBuffer = CachedBufferer.partial(rodsModel, blockState);
+            SuperByteBuffer rodsBuffer = CachedBuffers.partial(rodsModel, blockState);
             if (transformStack != null)
                 rodsBuffer.transform(transformStack);
             rodsBuffer.translate(0, rodsOffset1 + animation + .125f, 0)
                     .light(LightTexture.FULL_BRIGHT)
                     .renderInto(poseStack, bufferSource.getBuffer(RenderType.solid()));
 
-            SuperByteBuffer rodsBuffer2 = CachedBufferer.partial(rodsModel2, blockState);
+            SuperByteBuffer rodsBuffer2 = CachedBuffers.partial(rodsModel2, blockState);
             if (transformStack != null)
                 rodsBuffer2.transform(transformStack);
             rodsBuffer2.translate(0, rodsOffset2 + animation - 3 / 16f, 0)
@@ -178,7 +177,7 @@ public class BlazeBlockRenderer<T extends BlazeBlockEntity> extends SafeBlockEnt
             vScroll -= Mth.floor(vScroll);
             vScroll *= spriteHeight / 2;
 
-            SuperByteBuffer flameBuffer = CachedBufferer.partial(AllPartialModels.BLAZE_BURNER_FLAME, blockState);
+            SuperByteBuffer flameBuffer = CachedBuffers.partial(AllPartialModels.BLAZE_BURNER_FLAME, blockState);
             if (transformStack != null)
                 flameBuffer.transform(transformStack);
             flameBuffer.shiftUVScrolling(spriteShift, uScroll, vScroll);
@@ -191,13 +190,13 @@ public class BlazeBlockRenderer<T extends BlazeBlockEntity> extends SafeBlockEnt
     }
 
     protected static void draw(SuperByteBuffer buffer, float horizontalAngle, PoseStack poseStack, VertexConsumer vertexConsumer) {
-        buffer.rotateCentered(Direction.UP, horizontalAngle)
+        buffer.rotateCentered(horizontalAngle, Direction.UP)
                 .light(LightTexture.FULL_BRIGHT)
                 .renderInto(poseStack, vertexConsumer);
     }
 
     protected static void drawCentered(SuperByteBuffer buffer, float horizontalAngle, PoseStack poseStack, VertexConsumer vertexConsumer) {
-        buffer.rotateCentered(Direction.UP, horizontalAngle)
+        buffer.rotateCentered(horizontalAngle, Direction.UP)
                 .translate(0.5f, 0, 0.5f)
                 .light(LightTexture.FULL_BRIGHT)
                 .renderInto(poseStack, vertexConsumer);

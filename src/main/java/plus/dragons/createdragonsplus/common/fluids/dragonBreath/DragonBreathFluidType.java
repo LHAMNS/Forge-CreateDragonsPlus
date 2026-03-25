@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,15 +18,16 @@
 
 package plus.dragons.createdragonsplus.common.fluids.dragonBreath;
 
-import com.simibubi.create.foundation.utility.Color;
 import com.tterrag.registrate.builders.FluidBuilder.FluidTypeFactory;
 import java.util.function.Supplier;
+import net.createmod.catnip.theme.Color;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.FastColor;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.AreaEffectCloud;
@@ -51,7 +51,7 @@ public final class DragonBreathFluidType extends SolidRenderFluidType {
     }
 
     public static FluidTypeFactory create() {
-        int tintColor = 0xFF000000 | 0xFFFFFF;
+        int tintColor = FastColor.ARGB32.opaque(0xFFFFFF);
         Vector3f fogColor = new Color(0xDE9DC5).asVectorF();
         return (properties, stillTexture, flowingTexture) -> new DragonBreathFluidType(properties,
                 stillTexture,

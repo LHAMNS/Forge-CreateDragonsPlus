@@ -24,11 +24,11 @@ import net.minecraftforge.common.data.ExistingFileHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(ExistingFileHelper.class)
+@Mixin(value = ExistingFileHelper.class, remap = false)
 public interface ExistingFileHelperAccessor {
     @Accessor("clientResources")
     MultiPackResourceManager getClientResources();
 
-    @Accessor("serverResources")
+    @Accessor("serverData")
     MultiPackResourceManager getServerResources();
 }

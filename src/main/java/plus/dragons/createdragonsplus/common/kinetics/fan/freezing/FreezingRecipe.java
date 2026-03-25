@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,15 +18,14 @@
 
 package plus.dragons.createdragonsplus.common.kinetics.fan.freezing;
 
-import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
-import com.simibubi.create.content.processing.recipe.ProcessingRecipeBuilder;
-import com.simibubi.create.content.processing.recipe.ProcessingRecipeBuilder.ProcessingRecipeParams;
+import com.simibubi.create.content.processing.recipe.ProcessingRecipeParams;
+import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.items.wrapper.RecipeWrapper;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
 
-public class FreezingRecipe extends ProcessingRecipe<RecipeWrapper> {
+public class FreezingRecipe extends StandardProcessingRecipe<SingleRecipeInput> {
     public FreezingRecipe(ProcessingRecipeParams params) {
         super(CDPRecipes.FREEZING, params);
     }
@@ -43,11 +41,11 @@ public class FreezingRecipe extends ProcessingRecipe<RecipeWrapper> {
     }
 
     @Override
-    public boolean matches(RecipeWrapper input, Level level) {
-        return getIngredients().get(0).test(input.getItem(0));
+    public boolean matches(SingleRecipeInput input, Level level) {
+        return getIngredients().getFirst().test(input.item());
     }
 
-    public static ProcessingRecipeBuilder<FreezingRecipe> builder(ResourceLocation id) {
-        return new ProcessingRecipeBuilder<>(FreezingRecipe::new, id);
+    public static StandardProcessingRecipe.Builder<FreezingRecipe> builder(ResourceLocation id) {
+        return new StandardProcessingRecipe.Builder<>(FreezingRecipe::new, id);
     }
 }

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +19,8 @@
 package plus.dragons.createdragonsplus.common.fluids;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.BlockSource;
+import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
-import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.DispensibleContainerItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -36,11 +34,11 @@ public class StandardDispenserBehaviour extends DefaultDispenseItemBehavior {
 
     public ItemStack execute(BlockSource source, ItemStack itemStack) {
         DispensibleContainerItem dispensiblecontaineritem = (DispensibleContainerItem) itemStack.getItem();
-        BlockPos blockpos = source.getPos().relative(source.getBlockState().getValue(DispenserBlock.FACING));
-        Level level = source.getLevel();
-        if (dispensiblecontaineritem.emptyContents(null, level, blockpos, null)) {
+        BlockPos blockpos = source.pos().relative(source.state().getValue(DispenserBlock.FACING));
+        Level level = source.level();
+        if (dispensiblecontaineritem.emptyContents(null, level, blockpos, null, itemStack)) {
             dispensiblecontaineritem.checkExtraContent(null, level, itemStack, blockpos);
-            return new ItemStack(Items.BUCKET);
+            return this.consumeWithRemainder(source, itemStack, new ItemStack(Items.BUCKET));
         } else {
             return this.defaultDispenseItemBehavior.dispense(source, itemStack);
         }

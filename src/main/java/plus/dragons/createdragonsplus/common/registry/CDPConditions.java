@@ -14,18 +14,25 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  */
 
 package plus.dragons.createdragonsplus.common.registry;
 
-import net.minecraftforge.common.crafting.CraftingHelper;
+import com.mojang.serialization.MapCodec;
 import net.minecraftforge.eventbus.api.IEventBus;
-import plus.dragons.createdragonsplus.config.FeaturesConfig;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.registries.RegistryObject;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.NeoForgeRegistries;
+import plus.dragons.createdragonsplus.common.CDPCommon;
+import plus.dragons.createdragonsplus.config.FeaturesConfig.ConfigFeature;
 
 public class CDPConditions {
+    private static final DeferredRegister<MapCodec<? extends ICondition>> CONDITION_CODECS = DeferredRegister.create(NeoForgeRegistries.CONDITION_SERIALIZERS, CDPCommon.ID);
+
+    public static final RegistryObject<MapCodec<? extends ICondition>, MapCodec<ConfigFeature>> CONFIG_FEATURE = CONDITION_CODECS.register("config_feature", () -> ConfigFeature.CODEC);
+
     public static void register(IEventBus modBus) {
-        CraftingHelper.register(FeaturesConfig.ConfigFeatureConditionSerializer.INSTANCE);
+        CONDITION_CODECS.register(modBus);
     }
 }

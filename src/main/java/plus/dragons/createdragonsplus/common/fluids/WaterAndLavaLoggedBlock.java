@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +19,7 @@
 package plus.dragons.createdragonsplus.common.fluids;
 
 import java.util.Optional;
-import com.simibubi.create.foundation.utility.Lang;
+import net.createmod.catnip.lang.Lang;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.StringRepresentable;
@@ -43,8 +42,8 @@ public interface WaterAndLavaLoggedBlock extends BucketPickup, LiquidBlockContai
     EnumProperty<ContainedFluid> FLUID = EnumProperty.create("fluid", ContainedFluid.class);
 
     @Override
-    default boolean canPlaceLiquid(BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
-        return state.getValue(FLUID) == ContainedFluid.EMPTY && (fluid == Fluids.WATER || fluid == Fluids.LAVA);
+    default boolean canPlaceLiquid(@Nullable Player player, BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
+        return fluid == Fluids.WATER || fluid == Fluids.LAVA;
     }
 
     @Override
@@ -71,7 +70,7 @@ public interface WaterAndLavaLoggedBlock extends BucketPickup, LiquidBlockContai
     }
 
     @Override
-    default ItemStack pickupBlock(LevelAccessor level, BlockPos pos, BlockState state) {
+    default ItemStack pickupBlock(@Nullable Player player, LevelAccessor level, BlockPos pos, BlockState state) {
         var containedFluid = state.getValue(FLUID);
         if (containedFluid == ContainedFluid.EMPTY)
             return ItemStack.EMPTY;
@@ -88,36 +87,27 @@ public interface WaterAndLavaLoggedBlock extends BucketPickup, LiquidBlockContai
         return Optional.empty();
     }
 
+    @Override
     default Optional<SoundEvent> getPickupSound(BlockState state) {
-        switch (state.getValue(FLUID)) {
-            case WATER:
-                return Fluids.WATER.getPickupSound();
-            case LAVA:
-                return Fluids.LAVA.getPickupSound();
-            default:
-                return Optional.empty();
-        }
+        return switch (state.getValue(FLUID)) {
+            case EMPTY -> Optional.empty();
+            case WATER -> Fluids.WATER.getPickupSound();
+            case LAVA -> Fluids.LAVA.getPickupSound();
+        };
     }
 
     default FluidState fluidState(BlockState state) {
-        switch (state.getValue(FLUID)) {
-            case WATER:
-                return Fluids.WATER.getSource(false);
-            case LAVA:
-                return Fluids.LAVA.getSource(false);
-            default:
-                return Fluids.EMPTY.defaultFluidState();
-        }
+        return switch (state.getValue(FLUID)) {
+            case EMPTY -> Fluids.EMPTY.defaultFluidState();
+            case WATER -> Fluids.WATER.getSource(false);
+            case LAVA -> Fluids.LAVA.getSource(false);
+        };
     }
 
     default void updateFluid(LevelAccessor level, BlockState state, BlockPos pos) {
         switch (state.getValue(FLUID)) {
-            case WATER:
-                level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
-                break;
-            case LAVA:
-                level.scheduleTick(pos, Fluids.LAVA, Fluids.LAVA.getTickDelay(level));
-                break;
+            case WATER -> level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            case LAVA -> level.scheduleTick(pos, Fluids.LAVA, Fluids.LAVA.getTickDelay(level));
         }
     }
 

@@ -20,53 +20,45 @@
 package plus.dragons.createdragonsplus.config;
 
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.config.ModConfig;
-import org.apache.commons.lang3.tuple.Pair;
 
 public class CDPConfig {
-    private static CDPCommonConfig COMMON;
-    private static CDPClientConfig CLIENT;
-    private static CDPServerConfig SERVER;
+    private static final CDPCommonConfig COMMON_CONFIG = new CDPCommonConfig();
+    private static final CDPClientConfig CLIENT_CONFIG = new CDPClientConfig();
+    private static final CDPServerConfig SERVER_CONFIG = new CDPServerConfig();
 
-    public static void register() {
-        Pair<CDPCommonConfig, ForgeConfigSpec> commonPair = buildSpec(new CDPCommonConfig());
-        COMMON = commonPair.getLeft();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, commonPair.getRight());
+    public static void register(ModContainer container) {
+        ForgeConfigSpec.Builder commonBuilder = new ForgeConfigSpec.Builder();
+        COMMON_CONFIG.registerAll(commonBuilder);
+        container.addConfig(new ModConfig(ModConfig.Type.COMMON, commonBuilder.build(), container));
 
-        Pair<CDPClientConfig, ForgeConfigSpec> clientPair = buildSpec(new CDPClientConfig());
-        CLIENT = clientPair.getLeft();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, clientPair.getRight());
+        ForgeConfigSpec.Builder clientBuilder = new ForgeConfigSpec.Builder();
+        CLIENT_CONFIG.registerAll(clientBuilder);
+        container.addConfig(new ModConfig(ModConfig.Type.CLIENT, clientBuilder.build(), container));
 
-        Pair<CDPServerConfig, ForgeConfigSpec> serverPair = buildSpec(new CDPServerConfig());
-        SERVER = serverPair.getLeft();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, serverPair.getRight());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends com.simibubi.create.foundation.config.ConfigBase> Pair<T, ForgeConfigSpec> buildSpec(T config) {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
-        config.registerAll(builder);
-        return Pair.of(config, builder.build());
+        ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
+        SERVER_CONFIG.registerAll(serverBuilder);
+        container.addConfig(new ModConfig(ModConfig.Type.SERVER, serverBuilder.build(), container));
     }
 
     public static CDPCommonConfig common() {
-        return COMMON;
+        return COMMON_CONFIG;
     }
 
     public static CDPClientConfig client() {
-        return CLIENT;
+        return CLIENT_CONFIG;
     }
 
     public static CDPServerConfig server() {
-        return SERVER;
+        return SERVER_CONFIG;
     }
 
     public static CDPFeaturesConfig features() {
-        return COMMON.features;
+        return COMMON_CONFIG.features;
     }
 
     public static CDPRecipesConfig recipes() {
-        return SERVER.recipes;
+        return SERVER_CONFIG.recipes;
     }
 }

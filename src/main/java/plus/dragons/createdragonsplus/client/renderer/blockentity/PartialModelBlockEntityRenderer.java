@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +18,7 @@
 
 package plus.dragons.createdragonsplus.client.renderer.blockentity;
 
-import com.jozufozu.flywheel.core.PartialModel;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.Util;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.RandomSource;

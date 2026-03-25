@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,8 +18,8 @@
 
 package plus.dragons.createdragonsplus.data.internal;
 
-import com.simibubi.create.foundation.utility.LangBuilder;
-import com.simibubi.create.foundation.utility.LangNumberFormat;
+import net.createmod.catnip.lang.LangBuilder;
+import net.createmod.catnip.lang.LangNumberFormat;
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
@@ -58,14 +57,16 @@ public class CDPLang {
     }
 
     public static LangBuilder description(Holder<?> holder, Object... args) {
-        var key = holder.unwrapKey().orElseThrow(() ->
-            new IllegalArgumentException("Can not build description for unregistered object: " + holder));
+        var key = holder.getKey();
+        if (key == null)
+            throw new IllegalArgumentException("Can not build description for unregistered object: " + holder);
         return description(key.registry().getPath(), key.location(), args);
     }
 
     public static LangBuilder description(Holder<?> holder, String suffix, Object... args) {
-        var key = holder.unwrapKey().orElseThrow(() ->
-            new IllegalArgumentException("Can not build description for unregistered object: " + holder));
+        var key = holder.getKey();
+        if (key == null)
+            throw new IllegalArgumentException("Can not build description for unregistered object: " + holder);
         return description(key.registry().getPath(), key.location(), suffix, args);
     }
 
@@ -78,6 +79,6 @@ public class CDPLang {
     }
 
     public static LangBuilder fluid(FluidStack stack) {
-        return builder().add(stack.getDisplayName().copy());
+        return builder().add(stack.getHoverName().copy());
     }
 }

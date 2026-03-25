@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,17 +25,19 @@ import com.simibubi.create.compat.jei.EmptyBackground;
 import com.simibubi.create.compat.jei.category.ProcessingViaFanCategory;
 import com.simibubi.create.compat.jei.category.animations.AnimatedKinetics;
 import com.simibubi.create.content.processing.recipe.ProcessingOutput;
-import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
-import com.simibubi.create.foundation.gui.element.GuiGameElement;
+import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import java.util.ArrayList;
 import java.util.List;
+import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.kinetics.fan.freezing.FreezingRecipe;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
@@ -46,8 +47,7 @@ import plus.dragons.createdragonsplus.integration.ModIntegration;
 import plus.dragons.createdragonsplus.integration.jei.CDPJeiPlugin;
 
 public class FanFreezingCategory extends ProcessingViaFanCategory<FreezingRecipe> {
-    public static final mezz.jei.api.recipe.RecipeType<FreezingRecipe> TYPE =
-            new mezz.jei.api.recipe.RecipeType<>(CDPRecipes.FREEZING.getId(), FreezingRecipe.class);
+    public static final mezz.jei.api.recipe.RecipeType<RecipeHolder<FreezingRecipe>> TYPE = mezz.jei.api.recipe.RecipeType.createRecipeHolderType(CDPRecipes.FREEZING.getId());
 
     private FanFreezingCategory(Info<FreezingRecipe> info) {
         super(info);
@@ -59,7 +59,7 @@ public class FanFreezingCategory extends ProcessingViaFanCategory<FreezingRecipe
         var background = new EmptyBackground(178, 72);
         var icon = new DoubleItemIcon(AllItems.PROPELLER::asStack, Items.POWDER_SNOW_BUCKET::getDefaultInstance);
         var catalyst = AllBlocks.ENCASED_FAN.asStack();
-        catalyst.setHoverName(CDPLang.description("recipe", id, "fan").component().withStyle(style -> style.withItalic(false)));
+        catalyst.set(DataComponents.CUSTOM_NAME, CDPLang.description("recipe", id, "fan").component().withStyle(style -> style.withItalic(false)));
         var info = new Info<>(TYPE, title, background, icon, FanFreezingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
         return new FanFreezingCategory(info);
     }
@@ -73,33 +73,24 @@ public class FanFreezingCategory extends ProcessingViaFanCategory<FreezingRecipe
                 .render(graphics);
     }
 
-    @SuppressWarnings("unchecked")
-    private static List<FreezingRecipe> getAllRecipes() {
+    private static List<RecipeHolder<FreezingRecipe>> getAllRecipes() {
         var manager = CDPJeiPlugin.getRecipeManager();
         var recipes = new ArrayList<>(manager.getAllRecipesFor(CDPRecipes.FREEZING.getType()));
-        ResourceLocation garnishedFreezingId = ModIntegration.CREATE_GARNISHED.asResource("freezing");
-        RecipeType<?> garnishedType = ForgeRegistries.RECIPE_TYPES.getValue(garnishedFreezingId);
-        if (garnishedType != null) {
-            for (Recipe<?> recipe : manager.getAllRecipesFor(garnishedType)) {
-                if (recipe instanceof ProcessingRecipe<?> pr) {
-                    recipes.add(FreezingRecipe.builder(recipe.getId())
-                            .withItemIngredients(pr.getIngredients())
-                            .withItemOutputs(pr.getRollableResults().toArray(ProcessingOutput[]::new))
-                            .build());
-                }
-            }
+        RegistryObject<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> createGarnishedRecipe = DeferredHolder.create(Registries.RECIPE_TYPE, ModIntegration.CREATE_GARNISHED.asResource("freezing"));
+        if (createGarnishedRecipe.isBound()) {
+            manager.getAllRecipesFor(createGarnishedRecipe.get()).forEach(holder -> recipes
+                    .add(new RecipeHolder<>(holder.id(), FreezingRecipe.builder(holder.id())
+                            .withItemIngredients(holder.value().getIngredients())
+                            .withItemOutputs(holder.value().getRollableResults().toArray(ProcessingOutput[]::new))
+                            .build())));
         }
-        ResourceLocation dndFreezingId = ModIntegration.CREATE_DND.asResource("freezing");
-        RecipeType<?> dndType = ForgeRegistries.RECIPE_TYPES.getValue(dndFreezingId);
-        if (dndType != null) {
-            for (Recipe<?> recipe : manager.getAllRecipesFor(dndType)) {
-                if (recipe instanceof ProcessingRecipe<?> pr) {
-                    recipes.add(FreezingRecipe.builder(recipe.getId())
-                            .withItemIngredients(pr.getIngredients())
-                            .withItemOutputs(pr.getRollableResults().toArray(ProcessingOutput[]::new))
-                            .build());
-                }
-            }
+        RegistryObject<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> createDNDRecipe = DeferredHolder.create(Registries.RECIPE_TYPE, ModIntegration.CREATE_DND.asResource("freezing"));
+        if (createDNDRecipe.isBound()) {
+            manager.getAllRecipesFor(createDNDRecipe.get()).forEach(holder -> recipes
+                    .add(new RecipeHolder<>(holder.id(), FreezingRecipe.builder(holder.id())
+                            .withItemIngredients(holder.value().getIngredients())
+                            .withItemOutputs(holder.value().getRollableResults().toArray(ProcessingOutput[]::new))
+                            .build())));
         }
         return recipes;
     }

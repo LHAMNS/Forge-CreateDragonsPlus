@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,14 +20,18 @@ package plus.dragons.createdragonsplus.data;
 
 import static plus.dragons.createdragonsplus.common.CDPCommon.REGISTRATE;
 
+import com.tterrag.registrate.providers.ProviderType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.data.loading.DatagenModLoader;
 import plus.dragons.createdragonsplus.client.ponder.CDPPonderPlugin;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.data.internal.CDPRecipeProvider;
+import plus.dragons.createdragonsplus.data.internal.CDPRegistrateDataMaps;
 
+@Mod(CDPCommon.ID)
 public class CDPData {
     public CDPData(IEventBus modBus) {
         if (!DatagenModLoader.isRunningDataGen())
@@ -37,14 +40,17 @@ public class CDPData {
         REGISTRATE.registerBuiltinLocalization("tooltips");
         REGISTRATE.registerPonderLocalization(CDPPonderPlugin::new);
         REGISTRATE.registerForeignLocalization();
+        REGISTRATE.addDataGenerator(ProviderType.DATA_MAP, new CDPRegistrateDataMaps());
         modBus.register(this);
     }
 
     @SubscribeEvent
     public void generate(final GatherDataEvent event) {
+        var client = event.includeClient();
         var server = event.includeServer();
         var generator = event.getGenerator();
         var output = generator.getPackOutput();
+        var existingFileHelper = event.getExistingFileHelper();
         var registries = event.getLookupProvider();
         generator.addProvider(server, new CDPRecipeProvider(output, registries));
     }

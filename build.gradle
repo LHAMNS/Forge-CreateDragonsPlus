@@ -25,8 +25,6 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             mods {
                 "${mod_id}" {
                     source sourceSets.main
@@ -65,11 +63,12 @@ sourceSets.main.resources {
 }
 
 repositories {
-    maven { url "https://maven.tterrag.com/" }
-    maven { url "https://maven.createmod.net" }
-    maven { url "https://dvs1.progwml6.com/files/maven/" }
-    maven { url "https://maven.blamejared.com" }
-    maven { url "https://maven.theillusivec4.top/" }
+    maven { url "https://maven.createmod.net" } // Create, Flywheel, Ponder, Catnip
+    maven { url "https://maven.tterrag.com/" } // Registrate
+    maven { url "https://mvn.devos.one/snapshots" } // Registrate snapshots
+    maven { url "https://maven.blamejared.com" } // JEI
+    maven { url "https://maven.theillusivec4.top/" } // Curios API
+    maven { url "https://maven.fallenbreath.me/releases" } // Conditional Mixin
     maven { url "https://www.cursemaven.com" }
     maven { url "https://api.modrinth.com/maven" }
 }
@@ -77,14 +76,29 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    compileOnly fg.deobf("com.jozufozu.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
+    // Conditional Mixin
+    implementation(jarJar("me.fallenbreath:conditional-mixin-forge:${conditional_mixin_version}")) {
+        jarJar.ranged(it, "[${conditional_mixin_version},)")
+    }
 
-    compileOnly fg.deobf("com.tterrag.registrate:Registrate:${registrate_version}")
+    // Flywheel
+    compileOnlyApi("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
 
-    compileOnly fg.deobf("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") { transitive = false }
+    // Vanillin
+    runtimeOnly("dev.engine-room.vanillin:vanillin-forge-${minecraft_version}:${vanillin_version}")
 
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
+    // Registrate
+    api("com.tterrag.registrate:Registrate:${registrate_version}")
+
+    // Ponder
+    api("net.createmod.ponder:Ponder-Forge-${minecraft_version}:${ponder_version}")
+
+    // Create
+    api("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive = false }
+
+    // JEI
+    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
 }
 
 jar {

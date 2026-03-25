@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,34 +18,29 @@
 
 package plus.dragons.createdragonsplus.data.recipe;
 
-import com.google.gson.JsonObject;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.advancements.RequirementsStrategy;
+import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SingleItemRecipe;
-import net.minecraft.world.item.crafting.StonecutterRecipe;
 import org.jetbrains.annotations.Nullable;
 
 public class SingleItemRecipeBuilder extends BaseSingleItemRecipeBuilder<SingleItemRecipe, SingleItemRecipeBuilder> {
-    private final RecipeSerializer<? extends SingleItemRecipe> serializer;
-    private final Map<String, CriterionTriggerInstance> criteria = new LinkedHashMap<>();
+    private final SingleItemRecipe.Factory<?> factory;
+    private final Map<String, Criterion<?>> criteria = new LinkedHashMap<>();
     private String group = "";
 
-    public SingleItemRecipeBuilder(@Nullable String directory, RecipeSerializer<? extends SingleItemRecipe> serializer) {
+    public SingleItemRecipeBuilder(@Nullable String directory, SingleItemRecipe.Factory<?> factory) {
         super(directory);
-        this.serializer = serializer;
+        this.factory = factory;
     }
 
-    public SingleItemRecipeBuilder unlockedBy(String name, CriterionTriggerInstance criterion) {
+    public SingleItemRecipeBuilder unlockedBy(String name, Criterion<?> criterion) {
         criteria.put(name, criterion);
         return this;
     }
@@ -62,67 +56,26 @@ public class SingleItemRecipeBuilder extends BaseSingleItemRecipeBuilder<SingleI
     }
 
     @Override
-    public SingleItemRecipe build() {
+    public RecipeHolder<SingleItemRecipe> build() {
         if (id == null) {
-            id = BuiltInRegistries.ITEM.getKey(result.getItem());
+            id = result.getItemHolder().unwrapKey().orElseThrow().location();
         }
-        return new StonecutterRecipe(id, group, ingredient, result);
+        var recipe = this.factory.create(group, ingredient, result);
+        return new RecipeHolder<>(id, recipe);
     }
 
-    public void accept(Consumer<FinishedRecipe> output) {
+    @Override
+    public @Nullable AdvancementHolder buildAdvancement() {
         if (id == null) {
-            id = BuiltInRegistries.ITEM.getKey(result.getItem());
+            id = result.getItemHolder().unwrapKey().orElseThrow().location();
         }
-        ResourceLocation recipeId = this.directory == null ? id : new ResourceLocation(id.getNamespace(), this.directory + "/" + id.getPath());
-
-        Advancement.Builder advancementBuilder = Advancement.Builder.advancement()
-                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(recipeId))
-                .rewards(AdvancementRewards.Builder.recipe(recipeId))
-                .requirements(RequirementsStrategy.OR);
-        this.criteria.forEach(advancementBuilder::addCriterion);
-
-        output.accept(new Result(recipeId, this.serializer, this.group, this.ingredient, this.result, advancementBuilder, recipeId.withPrefix("recipes/")));
-    }
-
-    private static class Result implements FinishedRecipe {
-        private final ResourceLocation id;
-        private final RecipeSerializer<? extends SingleItemRecipe> serializer;
-        private final String group;
-        private final net.minecraft.world.item.crafting.Ingredient ingredient;
-        private final net.minecraft.world.item.ItemStack result;
-        private final Advancement.Builder advancement;
-        private final ResourceLocation advancementId;
-
-        Result(ResourceLocation id, RecipeSerializer<? extends SingleItemRecipe> serializer, String group, net.minecraft.world.item.crafting.Ingredient ingredient, net.minecraft.world.item.ItemStack result, Advancement.Builder advancement, ResourceLocation advancementId) {
-            this.id = id;
-            this.serializer = serializer;
-            this.group = group;
-            this.ingredient = ingredient;
-            this.result = result;
-            this.advancement = advancement;
-            this.advancementId = advancementId;
+        var builder = Advancement.Builder.advancement()
+                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(id))
+                .rewards(AdvancementRewards.Builder.recipe(id))
+                .requirements(AdvancementRequirements.Strategy.OR);
+        if (!this.criteria.isEmpty()) {
+            this.criteria.forEach(builder::addCriterion);
         }
-
-        @Override
-        public void serializeRecipeData(JsonObject json) {
-            if (!this.group.isEmpty()) json.addProperty("group", this.group);
-            json.add("ingredient", this.ingredient.toJson());
-            json.addProperty("result", BuiltInRegistries.ITEM.getKey(this.result.getItem()).toString());
-            json.addProperty("count", this.result.getCount());
-        }
-
-        @Override
-        public ResourceLocation getId() { return id; }
-
-        @Override
-        public RecipeSerializer<?> getType() { return serializer; }
-
-        @Nullable
-        @Override
-        public JsonObject serializeAdvancement() { return advancement.serializeToJson(); }
-
-        @Nullable
-        @Override
-        public ResourceLocation getAdvancementId() { return advancementId; }
+        return builder.build(this.id.withPrefix("recipes/"));
     }
 }

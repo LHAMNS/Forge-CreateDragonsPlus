@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,16 +18,15 @@
 
 package plus.dragons.createdragonsplus.config;
 
-import com.google.gson.JsonObject;
-import com.simibubi.create.foundation.config.ConfigBase;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.createmod.catnip.config.ConfigBase;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
-import net.minecraftforge.common.crafting.conditions.ICondition;
-import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.common.crafting.conditions.ICondition;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -66,7 +64,11 @@ public class FeaturesConfig extends ConfigBase {
     }
 
     public class ConfigFeature extends ConfigBool implements ICondition {
-        public static final ResourceLocation CONDITION_ID = new ResourceLocation("create_dragons_plus", "config_feature");
+        public static final MapCodec<ConfigFeature> CODEC = ResourceLocation.CODEC.comapFlatMap(
+                id -> FEATURES.containsKey(id)
+                        ? DataResult.success(FEATURES.get(id))
+                        : DataResult.error(() -> "No config features with id [" + id + "] exists"),
+                ConfigFeature::getId).fieldOf("feature");
         private final ResourceLocation id;
         private final @Nullable Boolean override;
 
@@ -94,42 +96,18 @@ public class FeaturesConfig extends ConfigBase {
         }
 
         @Override
-        public ResourceLocation getID() {
-            return CONDITION_ID;
+        public boolean test(IContext context) {
+            return get();
         }
 
         @Override
-        public boolean test(IContext context) {
-            return get();
+        public MapCodec<? extends ICondition> codec() {
+            return CODEC;
         }
     }
 
     @Override
     public String getName() {
         return "features";
-    }
-
-    public static class ConfigFeatureConditionSerializer implements IConditionSerializer<ConfigFeature> {
-        public static final ConfigFeatureConditionSerializer INSTANCE = new ConfigFeatureConditionSerializer();
-
-        @Override
-        public void write(JsonObject json, ConfigFeature value) {
-            json.addProperty("feature", value.getId().toString());
-        }
-
-        @Override
-        public ConfigFeature read(JsonObject json) {
-            ResourceLocation featureId = new ResourceLocation(GsonHelper.getAsString(json, "feature"));
-            ConfigFeature feature = FEATURES.get(featureId);
-            if (feature == null) {
-                throw new IllegalStateException("Unknown config feature: " + featureId);
-            }
-            return feature;
-        }
-
-        @Override
-        public ResourceLocation getID() {
-            return ConfigFeature.CONDITION_ID;
-        }
     }
 }

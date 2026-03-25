@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +18,7 @@
 
 package plus.dragons.createdragonsplus.mixin.minecraft;
 
+import com.google.common.collect.HashMultimap;
 import java.util.HashMap;
 import net.minecraft.server.ReloadableServerResources;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -39,12 +39,8 @@ public class ReloadableServerResourcesMixin {
 
     @Inject(method = "updateRegistryTags()V", at = @At("TAIL"))
     private void updateRegistryTags$postBeforeRecipeSyncEvent(CallbackInfo ci) {
-        var accessor = (RecipeManagerAccessor) this.recipes;
-        var byType = new HashMap<>(accessor.getByType());
-        for (var entry : byType.entrySet()) {
-            byType.put(entry.getKey(), new HashMap<>(entry.getValue()));
-        }
-        var byName = new HashMap<>(accessor.getByName());
+        var byType = HashMultimap.create(((RecipeManagerAccessor) this.recipes).getByType());
+        var byName = new HashMap<>(((RecipeManagerAccessor) this.recipes).getByName());
         MinecraftForge.EVENT_BUS.post(new UpdateRecipesEvent(recipes, byType, byName)).apply();
     }
 }

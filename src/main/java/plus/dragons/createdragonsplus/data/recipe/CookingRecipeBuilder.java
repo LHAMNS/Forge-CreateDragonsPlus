@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,35 +18,35 @@
 
 package plus.dragons.createdragonsplus.data.recipe;
 
-import com.google.gson.JsonObject;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
-import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.advancements.RequirementsStrategy;
+import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.CookingBookCategory;
-import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
 public class CookingRecipeBuilder<R extends AbstractCookingRecipe> extends BaseSingleItemRecipeBuilder<R, CookingRecipeBuilder<R>> {
-    private final RecipeSerializer<R> serializer;
+    private final AbstractCookingRecipe.Factory<R> factory;
     private float experience;
     private int cookingTime;
-    private final Map<String, CriterionTriggerInstance> criteria = new LinkedHashMap<>();
+    private final Map<String, Criterion<?>> criteria = new LinkedHashMap<>();
     private CookingBookCategory category = CookingBookCategory.MISC;
     private String group = "";
 
-    @SuppressWarnings("unchecked")
-    public CookingRecipeBuilder(@Nullable String directory, RecipeSerializer<? extends R> serializer, int cookingTime) {
+    protected CookingRecipeBuilder(@Nullable String directory, AbstractCookingRecipe.Factory<R> factory) {
         super(directory);
-        this.serializer = (RecipeSerializer<R>) serializer;
+        this.factory = factory;
+    }
+
+    public CookingRecipeBuilder(@Nullable String directory, AbstractCookingRecipe.Factory<R> factory, int cookingTime) {
+        super(directory);
+        this.factory = factory;
         this.cookingTime = cookingTime;
     }
 
@@ -61,7 +60,7 @@ public class CookingRecipeBuilder<R extends AbstractCookingRecipe> extends BaseS
         return this;
     }
 
-    public CookingRecipeBuilder<R> unlockedBy(String name, CriterionTriggerInstance criterion) {
+    public CookingRecipeBuilder<R> unlockedBy(String name, Criterion<?> criterion) {
         criteria.put(name, criterion);
         return this;
     }
@@ -82,69 +81,24 @@ public class CookingRecipeBuilder<R extends AbstractCookingRecipe> extends BaseS
     }
 
     @Override
-    public R build() {
-        throw new UnsupportedOperationException("Use accept(Consumer<FinishedRecipe>) instead");
-    }
-
-    public void accept(Consumer<FinishedRecipe> output) {
+    public RecipeHolder<R> build() {
         if (id == null) {
-            id = BuiltInRegistries.ITEM.getKey(result.getItem());
+            id = result.getItemHolder().unwrapKey().orElseThrow().location();
         }
-        ResourceLocation recipeId = this.directory == null ? id : new ResourceLocation(id.getNamespace(), this.directory + "/" + id.getPath());
-
-        Advancement.Builder advancementBuilder = Advancement.Builder.advancement()
-                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(recipeId))
-                .rewards(AdvancementRewards.Builder.recipe(recipeId))
-                .requirements(RequirementsStrategy.OR);
-        this.criteria.forEach(advancementBuilder::addCriterion);
-
-        output.accept(new Result(recipeId, this.serializer, this.group, this.ingredient, this.result, this.experience, this.cookingTime, advancementBuilder, recipeId.withPrefix("recipes/")));
+        var recipe = factory.create(group, category, ingredient, result, experience, cookingTime);
+        return new RecipeHolder<>(id, recipe);
     }
 
-    private static class Result implements FinishedRecipe {
-        private final ResourceLocation id;
-        private final RecipeSerializer<?> serializer;
-        private final String group;
-        private final net.minecraft.world.item.crafting.Ingredient ingredient;
-        private final net.minecraft.world.item.ItemStack result;
-        private final float experience;
-        private final int cookingTime;
-        private final Advancement.Builder advancement;
-        private final ResourceLocation advancementId;
-
-        Result(ResourceLocation id, RecipeSerializer<?> serializer, String group, net.minecraft.world.item.crafting.Ingredient ingredient, net.minecraft.world.item.ItemStack result, float experience, int cookingTime, Advancement.Builder advancement, ResourceLocation advancementId) {
-            this.id = id;
-            this.serializer = serializer;
-            this.group = group;
-            this.ingredient = ingredient;
-            this.result = result;
-            this.experience = experience;
-            this.cookingTime = cookingTime;
-            this.advancement = advancement;
-            this.advancementId = advancementId;
+    @Override
+    public @Nullable AdvancementHolder buildAdvancement() {
+        if (id == null) {
+            id = result.getItemHolder().unwrapKey().orElseThrow().location();
         }
-
-        @Override
-        public void serializeRecipeData(JsonObject json) {
-            if (!this.group.isEmpty()) json.addProperty("group", this.group);
-            json.add("ingredient", this.ingredient.toJson());
-            json.addProperty("result", BuiltInRegistries.ITEM.getKey(this.result.getItem()).toString());
-            json.addProperty("experience", this.experience);
-            json.addProperty("cookingtime", this.cookingTime);
-        }
-
-        @Override
-        public ResourceLocation getId() { return id; }
-
-        @Override
-        public RecipeSerializer<?> getType() { return serializer; }
-
-        @Nullable
-        @Override
-        public JsonObject serializeAdvancement() { return advancement.serializeToJson(); }
-
-        @Nullable
-        @Override
-        public ResourceLocation getAdvancementId() { return advancementId; }
+        var builder = Advancement.Builder.advancement()
+                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(id))
+                .rewards(AdvancementRewards.Builder.recipe(id))
+                .requirements(AdvancementRequirements.Strategy.OR);
+        this.criteria.forEach(builder::addCriterion);
+        return builder.build(id);
     }
 }

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +26,7 @@ import plus.dragons.createdragonsplus.util.MethodsReturnNullabilityUnknownByDefa
 import plus.dragons.createdragonsplus.util.ParametersNullabilityUnknownByDefault;
 
 /**
- * Interface for providing {@link BlockEntityBehaviour} without {@link SmartBlockEntity}.
+ * Capability interface for providing {@link BlockEntityBehaviour} without {@link SmartBlockEntity}.
  */
 @MethodsReturnNullabilityUnknownByDefault
 @ParametersNullabilityUnknownByDefault

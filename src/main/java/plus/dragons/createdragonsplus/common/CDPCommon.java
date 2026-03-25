@@ -20,10 +20,12 @@
 package plus.dragons.createdragonsplus.common;
 
 import com.simibubi.create.foundation.item.ItemDescription;
-import com.simibubi.create.foundation.item.TooltipHelper;
+import net.createmod.catnip.lang.FontHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -38,14 +40,15 @@ import plus.dragons.createdragonsplus.common.registry.CDPFluids;
 import plus.dragons.createdragonsplus.common.registry.CDPItems;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
 import plus.dragons.createdragonsplus.config.CDPConfig;
+import plus.dragons.createdragonsplus.integration.ModIntegration;
 
 @Mod(CDPCommon.ID)
 public class CDPCommon {
     public static final String ID = "create_dragons_plus";
     public static final String NAME = "Create: Dragons Plus";
     public static final String PERSISTENT_DATA_KEY = "CreateDragonsPlusData";
-    public static final CDPRegistrate REGISTRATE = CDPRegistrate.create(ID)
-            .setTooltipModifier(item -> new ItemDescription.Modifier(item, TooltipHelper.Palette.STANDARD_CREATE));
+    public static final CDPRegistrate REGISTRATE = new CDPRegistrate(ID)
+            .setTooltipModifier(item -> new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE));
 
     public CDPCommon() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -58,15 +61,18 @@ public class CDPCommon {
         CDPCriterions.register(modBus);
         CDPRecipes.register(modBus);
         CDPConditions.register(modBus);
-        CDPConfig.register();
-        modBus.addListener(this::setup);
+        CDPFanProcessingTypes.register(modBus);
+        modBus.register(this);
+        CDPConfig.register(ModLoadingContext.get().getActiveContainer());
     }
 
-    private void setup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> {
-            CDPFanProcessingTypes.register();
-            CDPBlockFreezers.register();
-        });
+    @SubscribeEvent
+    public void setup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(CDPBlockFreezers::register);
+        for (ModIntegration integration : ModIntegration.values()) {
+            if (integration.enabled())
+                event.enqueueWork(integration::onCommonSetup);
+        }
     }
 
     public static ResourceLocation asResource(String path) {

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +18,12 @@
 
 package plus.dragons.createdragonsplus.common.fluids.dye;
 
-import com.simibubi.create.foundation.utility.Color;
 import com.tterrag.registrate.builders.FluidBuilder.FluidTypeFactory;
 import java.util.function.Supplier;
+import net.createmod.catnip.theme.Color;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
@@ -40,7 +40,7 @@ public final class DyeFluidType extends SolidRenderFluidType {
     }
 
     public static FluidTypeFactory create(DyeColor color) {
-        int tintColor = 0xFF000000 | color.getTextureDiffuseColor();
+        int tintColor = FastColor.ARGB32.opaque(color.getTextureDiffuseColor());
         Vector3f fogColor = new Color(tintColor).asVectorF();
         return (properties, stillTexture, flowingTexture) -> new DyeFluidType(properties,
                 stillTexture,

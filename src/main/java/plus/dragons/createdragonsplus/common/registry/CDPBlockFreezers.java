@@ -28,12 +28,12 @@ import plus.dragons.createdragonsplus.common.processing.freeze.BlockFreezer;
 
 public class CDPBlockFreezers {
     public static void register() {
-        BlockFreezer.REGISTRY.put(Blocks.SNOW_BLOCK, CDPBlockFreezers::passive);
-        BlockFreezer.REGISTRY.put(Blocks.POWDER_SNOW, CDPBlockFreezers::passive);
-        BlockFreezer.REGISTRY.put(Blocks.FROSTED_ICE, CDPBlockFreezers::passive);
-        BlockFreezer.REGISTRY.put(Blocks.ICE, CDPBlockFreezers::passive);
-        BlockFreezer.REGISTRY.put(Blocks.PACKED_ICE, CDPBlockFreezers::passive);
-        BlockFreezer.REGISTRY.put(Blocks.BLUE_ICE, CDPBlockFreezers::passive);
+        BlockFreezer.register(Blocks.SNOW_BLOCK, CDPBlockFreezers::passive);
+        BlockFreezer.register(Blocks.POWDER_SNOW, CDPBlockFreezers::passive);
+        BlockFreezer.register(Blocks.FROSTED_ICE, CDPBlockFreezers::passive);
+        BlockFreezer.register(Blocks.ICE, CDPBlockFreezers::passive);
+        BlockFreezer.register(Blocks.PACKED_ICE, CDPBlockFreezers::passive);
+        BlockFreezer.register(Blocks.BLUE_ICE, CDPBlockFreezers::passive);
     }
 
     public static float passive(Level level, BlockPos pos, BlockState state) {

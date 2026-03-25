@@ -14,32 +14,24 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  */
 
 package plus.dragons.createdragonsplus.common.registry;
 
-import java.util.function.Supplier;
-import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.advancements.CriterionTrigger;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.RegistryObject;
+import net.minecraftforge.registries.DeferredRegister;
+import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.advancements.criterion.StatTrigger;
 
 public class CDPCriterions {
-    public static final Supplier<StatTrigger> STAT = new Supplier<>() {
-        private StatTrigger instance;
-
-        @Override
-        public StatTrigger get() {
-            if (instance == null) {
-                instance = CriteriaTriggers.register(new StatTrigger());
-            }
-            return instance;
-        }
-    };
+    private static final DeferredRegister<CriterionTrigger<?>> TRIGGER_TYPES = DeferredRegister.create(BuiltInRegistries.TRIGGER_TYPES, CDPCommon.ID);
+    public static final RegistryObject<CriterionTrigger<?>, StatTrigger> STAT = TRIGGER_TYPES
+            .register("stat", StatTrigger::new);
 
     public static void register(IEventBus modBus) {
-        // Force initialization to register the trigger with CriteriaTriggers
-        STAT.get();
+        TRIGGER_TYPES.register(modBus);
     }
 }

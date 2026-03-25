@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,20 +25,22 @@ import com.simibubi.create.compat.jei.EmptyBackground;
 import com.simibubi.create.compat.jei.category.ProcessingViaFanCategory;
 import com.simibubi.create.compat.jei.category.animations.AnimatedKinetics;
 import com.simibubi.create.content.processing.recipe.ProcessingOutput;
-import com.simibubi.create.content.processing.recipe.ProcessingRecipe;
-import com.simibubi.create.foundation.gui.element.GuiGameElement;
+import com.simibubi.create.content.processing.recipe.StandardProcessingRecipe;
 import java.util.ArrayList;
 import java.util.List;
+import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.SkullBlockEntity;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import plus.dragons.createdragonsplus.common.CDPCommon;
 import plus.dragons.createdragonsplus.common.kinetics.fan.ending.EndingRecipe;
 import plus.dragons.createdragonsplus.common.registry.CDPRecipes;
@@ -51,8 +52,7 @@ import plus.dragons.createdragonsplus.util.FieldsNullabilityUnknownByDefault;
 
 @FieldsNullabilityUnknownByDefault
 public class FanEndingCategory extends ProcessingViaFanCategory<EndingRecipe> {
-    public static final mezz.jei.api.recipe.RecipeType<EndingRecipe> TYPE =
-            new mezz.jei.api.recipe.RecipeType<>(CDPRecipes.ENDING.getId(), EndingRecipe.class);
+    public static final mezz.jei.api.recipe.RecipeType<RecipeHolder<EndingRecipe>> TYPE = mezz.jei.api.recipe.RecipeType.createRecipeHolderType(CDPRecipes.ENDING.getId());
 
     private FanEndingCategory(Info<EndingRecipe> info) {
         super(info);
@@ -64,7 +64,7 @@ public class FanEndingCategory extends ProcessingViaFanCategory<EndingRecipe> {
         var background = new EmptyBackground(178, 72);
         var icon = new DoubleItemIcon(AllItems.PROPELLER::asStack, () -> new ItemStack(Items.DRAGON_BREATH));
         var catalyst = AllBlocks.ENCASED_FAN.asStack();
-        catalyst.setHoverName(CDPLang.description("recipe", id, "fan").component().withStyle(style -> style.withItalic(false)));
+        catalyst.set(DataComponents.CUSTOM_NAME, CDPLang.description("recipe", id, "fan").component().withStyle(style -> style.withItalic(false)));
         var info = new Info<>(TYPE, title, background, icon, FanEndingCategory::getAllRecipes, CompatUtility.catalystWithIndustryFan(catalyst));
         return new FanEndingCategory(info);
     }
@@ -79,21 +79,16 @@ public class FanEndingCategory extends ProcessingViaFanCategory<EndingRecipe> {
                 .render(graphics);
     }
 
-    @SuppressWarnings("unchecked")
-    private static List<EndingRecipe> getAllRecipes() {
+    private static List<RecipeHolder<EndingRecipe>> getAllRecipes() {
         var manager = CDPJeiPlugin.getRecipeManager();
         var recipes = new ArrayList<>(manager.getAllRecipesFor(CDPRecipes.ENDING.getType()));
-        ResourceLocation dndDragonBreathingId = ModIntegration.CREATE_DND.asResource("dragon_breathing");
-        RecipeType<?> dndType = ForgeRegistries.RECIPE_TYPES.getValue(dndDragonBreathingId);
-        if (dndType != null) {
-            for (Recipe<?> recipe : manager.getAllRecipesFor(dndType)) {
-                if (recipe instanceof ProcessingRecipe<?> pr) {
-                    recipes.add(EndingRecipe.builder(recipe.getId())
-                            .withItemIngredients(pr.getIngredients())
-                            .withItemOutputs(pr.getRollableResults().toArray(ProcessingOutput[]::new))
-                            .build());
-                }
-            }
+        RegistryObject<RecipeType<?>, RecipeType<StandardProcessingRecipe<SingleRecipeInput>>> createDNDRecipe = DeferredHolder.create(Registries.RECIPE_TYPE, ModIntegration.CREATE_DND.asResource("dragon_breathing"));
+        if (createDNDRecipe.isBound()) {
+            manager.getAllRecipesFor(createDNDRecipe.get()).forEach(holder -> recipes
+                    .add(new RecipeHolder<>(holder.id(), EndingRecipe.builder(holder.id())
+                            .withItemIngredients(holder.value().getIngredients())
+                            .withItemOutputs(holder.value().getRollableResults().toArray(ProcessingOutput[]::new))
+                            .build())));
         }
         return recipes;
     }

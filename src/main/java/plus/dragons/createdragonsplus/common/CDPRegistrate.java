@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2025  DragonsPlus
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  * SPDX-License-Identifier: LGPL-3.0-or-later
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,65 +21,113 @@ package plus.dragons.createdragonsplus.common;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonObject;
+import com.simibubi.create.api.behaviour.display.DisplaySource;
+import com.simibubi.create.api.behaviour.display.DisplayTarget;
+import com.simibubi.create.api.contraption.storage.fluid.MountedFluidStorageType;
+import com.simibubi.create.api.contraption.storage.item.MountedItemStorageType;
+import com.simibubi.create.api.registry.CreateRegistries;
+import com.simibubi.create.api.registry.registrate.SimpleBuilder;
 import com.simibubi.create.content.fluids.VirtualFluid;
+import com.simibubi.create.content.kinetics.mechanicalArm.ArmInteractionPointType;
+import com.simibubi.create.foundation.data.CreateBlockEntityBuilder;
+import com.simibubi.create.foundation.data.CreateEntityBuilder;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.simibubi.create.foundation.data.VirtualFluidBuilder;
 import com.simibubi.create.foundation.item.TooltipModifier;
+import com.tterrag.registrate.AbstractRegistrate;
+import com.tterrag.registrate.builders.BlockEntityBuilder.BlockEntityFactory;
+import com.tterrag.registrate.builders.Builder;
 import com.tterrag.registrate.builders.FluidBuilder;
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.providers.RegistrateLangProvider;
 import com.tterrag.registrate.providers.RegistrateTagsProvider;
 import com.tterrag.registrate.providers.RegistrateTagsProvider.IntrinsicImpl;
+import com.tterrag.registrate.util.entry.RegistryEntry;
 import com.tterrag.registrate.util.nullness.NonNullFunction;
+import com.tterrag.registrate.util.nullness.NonNullSupplier;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import net.createmod.ponder.api.registration.PonderPlugin;
+import net.createmod.ponder.foundation.PonderIndex;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.fluids.BaseFlowingFluid;
 import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import plus.dragons.createdragonsplus.common.registrate.builder.ArmInteractionPointBuilder;
 import plus.dragons.createdragonsplus.common.registrate.builder.CustomStatBuilder;
 import plus.dragons.createdragonsplus.data.lang.ForeignLanguageProvider;
 import plus.dragons.createdragonsplus.data.tag.IntrinsicTagRegistry;
-import plus.dragons.createdragonsplus.mixin.forge.ExistingFileHelperAccessor;
 import plus.dragons.createdragonsplus.data.tag.ItemTagRegistry;
 import plus.dragons.createdragonsplus.data.tag.TagRegistry;
+import plus.dragons.createdragonsplus.mixin.forge.ExistingFileHelperAccessor;
 import plus.dragons.createdragonsplus.util.CodeReference;
 
 @CodeReference(value = CreateRegistrate.class, source = "create", license = "mit")
-public class CDPRegistrate extends CreateRegistrate {
+public class CDPRegistrate extends AbstractRegistrate<CDPRegistrate> {
+    protected final Logger logger;
+    protected final Map<Holder<?>, Holder<CreativeModeTab>> creativeModeTabLookup = new HashMap<>();
+    protected @Nullable Holder<CreativeModeTab> creativeModeTab;
     protected @Nullable Function<Item, TooltipModifier> tooltipModifier;
     protected @Nullable ExistingFileHelper existingFileHelper;
     protected @Nullable String templateLocale;
 
-    protected CDPRegistrate(String modid) {
+    public CDPRegistrate(String modid) {
         super(modid);
-    }
-
-    public static CDPRegistrate create(String modid) {
-        return new CDPRegistrate(modid);
+        this.defaultCreativeTab((ResourceKey<CreativeModeTab>) null);
+        this.logger = LoggerFactory.getLogger(this.getClass().getSimpleName() + "[" + modid + "]");
     }
 
     public final ResourceLocation asResource(String path) {
         return new ResourceLocation(getModid(), path);
+    }
+
+    public boolean isInCreativeModeTab(Holder<?> holder) {
+        return this.creativeModeTabLookup.containsKey(holder);
+    }
+
+    @Nullable
+    public Holder<CreativeModeTab> getCreativeModeTab(Holder<?> holder) {
+        return this.creativeModeTabLookup.get(holder);
+    }
+
+    public CDPRegistrate setCreativeModeTab(@Nullable Holder<CreativeModeTab> creativeModeTab) {
+        this.creativeModeTab = creativeModeTab;
+        return this;
     }
 
     public CDPRegistrate setTooltipModifier(@Nullable Function<Item, TooltipModifier> tooltipModifier) {
@@ -88,10 +135,31 @@ public class CDPRegistrate extends CreateRegistrate {
         return this;
     }
 
+    @Override
+    protected <R, T extends R> RegistryEntry<R, T> accept(String name, ResourceKey<? extends Registry<R>> type, Builder<R, T, ?, ?> builder, NonNullSupplier<? extends T> creator, NonNullFunction<RegistryObject<R, T>, ? extends RegistryEntry<R, T>> entryFactory) {
+        RegistryEntry<R, T> entry = super.accept(name, type, builder, creator, entryFactory);
+        if (type.equals(Registries.ITEM) && this.tooltipModifier != null) {
+            Function<Item, TooltipModifier> tooltipModifier = this.tooltipModifier;
+            this.addRegisterCallback(name, Registries.ITEM, item -> {
+                TooltipModifier modifier = tooltipModifier.apply(item);
+                TooltipModifier.REGISTRY.register(item, modifier);
+            });
+        }
+        if (this.creativeModeTab != null) {
+            this.creativeModeTabLookup.put(entry, this.creativeModeTab);
+        }
+        return entry;
+    }
+
     /* Datagen */
 
     public <T, P extends RegistrateTagsProvider<T>> CDPRegistrate registerTags(ProviderType<P> type, TagRegistry<T, P> registry) {
         this.addDataGenerator(type, registry::generate);
+        return this;
+    }
+
+    public CDPRegistrate registerEnchantmentTags(TagRegistry<Enchantment, RegistrateTagsProvider<Enchantment>> registry) {
+        this.addDataGenerator(ProviderType.ENCHANTMENT_TAGS, registry::generate);
         return this;
     }
 
@@ -116,6 +184,16 @@ public class CDPRegistrate extends CreateRegistrate {
     public CDPRegistrate registerEntityTags(IntrinsicTagRegistry<EntityType<?>, IntrinsicImpl<EntityType<?>>> registry) {
         this.addDataGenerator(ProviderType.ENTITY_TAGS, registry::generate);
         this.addDataGenerator(ProviderType.LANG, registry::generate);
+        return this;
+    }
+
+    public CDPRegistrate registerPonderLocalization(Supplier<PonderPlugin> plugin) {
+        if (FMLLoader.getDist() == Dist.CLIENT) {
+            PonderIndex.addPlugin(plugin.get());
+            this.addDataGenerator(ProviderType.LANG, prov -> PonderIndex
+                    .getLangAccess()
+                    .provideLang(getModid(), prov::add));
+        }
         return this;
     }
 
@@ -160,10 +238,7 @@ public class CDPRegistrate extends CreateRegistrate {
             throw new IllegalStateException("Can not get existing resource outside datagen");
         }
         ExistingFileHelperAccessor accessor = (ExistingFileHelperAccessor) this.existingFileHelper;
-        return switch (type) {
-            case CLIENT_RESOURCES -> accessor.getClientResources();
-            case SERVER_DATA -> accessor.getServerResources();
-        };
+        return type == PackType.CLIENT_RESOURCES ? accessor.getClientResources() : accessor.getServerResources();
     }
 
     protected static JsonObject getJsonFromResource(Resource resource) {
@@ -178,6 +253,7 @@ public class CDPRegistrate extends CreateRegistrate {
     protected void onData(GatherDataEvent event) {
         super.onData(event);
         boolean client = event.includeClient();
+        boolean server = event.includeServer();
         DataGenerator generator = event.getGenerator();
         PackOutput output = generator.getPackOutput();
         this.existingFileHelper = event.getExistingFileHelper();
@@ -187,9 +263,30 @@ public class CDPRegistrate extends CreateRegistrate {
 
     /* Builders */
 
+    @Override
+    public <T extends BlockEntity> CreateBlockEntityBuilder<T, CDPRegistrate> blockEntity(String name, BlockEntityFactory<T> factory) {
+        return blockEntity(self(), name, factory);
+    }
+
+    @Override
+    public <T extends BlockEntity, P> CreateBlockEntityBuilder<T, P> blockEntity(P parent, String name, BlockEntityFactory<T> factory) {
+        return (CreateBlockEntityBuilder<T, P>) entry(name, callback -> CreateBlockEntityBuilder.create(this, parent, name, callback, factory));
+    }
+
+    @Override
+    public <T extends Entity> CreateEntityBuilder<T, CDPRegistrate> entity(String name, EntityType.EntityFactory<T> factory, MobCategory category) {
+        return this.entity(self(), name, factory, category);
+    }
+
+    @Override
+    public <T extends Entity, P> CreateEntityBuilder<T, P> entity(P parent, String name, EntityType.EntityFactory<T> factory, MobCategory category) {
+        return (CreateEntityBuilder<T, P>) this.entry(name, callback -> CreateEntityBuilder.create(this, parent, name, callback, factory, category));
+    }
+
     public FluidType defaultFluidType(FluidType.Properties properties, ResourceLocation stillTexture, ResourceLocation flowingTexture) {
         return new FluidType(properties) {
             @Override
+            @SuppressWarnings("removal")
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
                     @Override
@@ -241,7 +338,46 @@ public class CDPRegistrate extends CreateRegistrate {
                 this::defaultFluidType, VirtualFluid::createSource, VirtualFluid::createFlowing));
     }
 
+    @Override
+    public FluidBuilder<BaseFlowingFluid.Flowing, CDPRegistrate> fluid(String name) {
+        return fluid(name,
+                asResource("fluid/" + name + "_still"),
+                asResource("fluid/" + name + "_flow"));
+    }
+
+    @Override
+    public FluidBuilder<BaseFlowingFluid.Flowing, CDPRegistrate> fluid(String name, FluidBuilder.FluidTypeFactory typeFactory) {
+        return fluid(name,
+                asResource("fluid/" + name + "_still"),
+                asResource("fluid/" + name + "_flow"),
+                typeFactory);
+    }
+
+    public <T extends MountedItemStorageType<?>> SimpleBuilder<MountedItemStorageType<?>, T, CDPRegistrate> mountedItemStorage(String name, Supplier<T> supplier) {
+        return this.entry(name, callback -> new SimpleBuilder<>(this, this, name, callback,
+                CreateRegistries.MOUNTED_ITEM_STORAGE_TYPE, supplier).byBlock(MountedItemStorageType.REGISTRY));
+    }
+
+    public <T extends MountedFluidStorageType<?>> SimpleBuilder<MountedFluidStorageType<?>, T, CDPRegistrate> mountedFluidStorage(String name, Supplier<T> supplier) {
+        return this.entry(name, callback -> new SimpleBuilder<>(this, this, name, callback,
+                CreateRegistries.MOUNTED_FLUID_STORAGE_TYPE, supplier).byBlock(MountedFluidStorageType.REGISTRY));
+    }
+
+    public <T extends DisplaySource> SimpleBuilder<DisplaySource, T, CDPRegistrate> displaySource(String name, Supplier<T> supplier) {
+        return this.entry(name, callback -> new SimpleBuilder<>(this, this, name, callback,
+                CreateRegistries.DISPLAY_SOURCE, supplier).byBlock(DisplaySource.BY_BLOCK).byBlockEntity(DisplaySource.BY_BLOCK_ENTITY));
+    }
+
+    public <T extends DisplayTarget> SimpleBuilder<DisplayTarget, T, CDPRegistrate> displayTarget(String name, Supplier<T> supplier) {
+        return this.entry(name, callback -> new SimpleBuilder<>(this, this, name, callback,
+                CreateRegistries.DISPLAY_TARGET, supplier).byBlock(DisplayTarget.BY_BLOCK).byBlockEntity(DisplayTarget.BY_BLOCK_ENTITY));
+    }
+
     public CustomStatBuilder<CDPRegistrate> customStat(String name, Supplier<ResourceLocation> supplier) {
         return this.entry(name, callback -> new CustomStatBuilder<>(this, this, name, callback, supplier));
+    }
+
+    public <T extends ArmInteractionPointType> ArmInteractionPointBuilder<T, CDPRegistrate> armInteractionPoint(String name, Supplier<T> supplier) {
+        return this.entry(name, callback -> new ArmInteractionPointBuilder<>(this, this, name, callback, supplier));
     }
 }

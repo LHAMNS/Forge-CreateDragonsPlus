@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2025  DragonsPlus
  * SPDX-License-Identifier: LGPL-3.0-or-later
- * Ported from NeoForge 1.21.1 to Forge 1.20.1
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +19,11 @@
 package plus.dragons.createdragonsplus.util;
 
 import com.google.common.base.MoreObjects;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 public class ErrorMessages {
@@ -41,7 +41,7 @@ public class ErrorMessages {
 
     public static String blockEntity(BlockEntity blockEntity) {
         return MoreObjects.toStringHelper(blockEntity)
-                .add("type", ForgeRegistries.BLOCK_ENTITY_TYPES.getKey(blockEntity.getType()))
+                .add("type", Util.getRegisteredName(BuiltInRegistries.BLOCK_ENTITY_TYPE, blockEntity.getType()))
                 .add("level", level(blockEntity.getLevel()))
                 .add("pos", pos(blockEntity.getBlockPos()))
                 .omitNullValues()
