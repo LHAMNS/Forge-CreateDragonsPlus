@@ -36,6 +36,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import plus.dragons.createintegratedfarming.config.CIFConfig;
 
 public abstract class AbstractFishingNetContext<T extends FishingHook> {
+    protected final ServerLevel level;
     protected final FishingNetFakePlayer player;
     protected final ItemStack fishingRod;
     protected final T fishingHook;
@@ -44,6 +45,7 @@ public abstract class AbstractFishingNetContext<T extends FishingHook> {
     public int timeUntilCatch;
 
     public AbstractFishingNetContext(ServerLevel level, ItemStack fishingRod) {
+        this.level = level;
         this.player = new FishingNetFakePlayer(level);
         this.fishingRod = fishingRod;
         this.fishingHook = createFishingHook(level);
@@ -72,7 +74,7 @@ public abstract class AbstractFishingNetContext<T extends FishingHook> {
     public void reset(ServerLevel level) {
         this.visitedBlocks.clear();
         int lureSpeed = EnchantmentHelper.getFishingSpeedBonus(fishingRod);
-        this.timeUntilCatch = (Mth.nextInt(fishingHook.getRandom(), 100, 600) - lureSpeed * 20) *
+        this.timeUntilCatch = (Mth.nextInt(level.getRandom(), 100, 600) - lureSpeed * 20) *
                 CIFConfig.server().fishingNetCooldownMultiplier.get();
     }
 
@@ -113,7 +115,7 @@ public abstract class AbstractFishingNetContext<T extends FishingHook> {
         int maxRecorded = CIFConfig.server().fishingNetMaxRecordedBlocks.get();
         if (maxRecorded == 0)
             return true;
-        return fishingHook.getRandom().nextInt(maxRecorded) < visitedBlocks.size();
+        return level.getRandom().nextInt(maxRecorded) < visitedBlocks.size();
     }
 
     public void invalidate(ServerLevel level) {
